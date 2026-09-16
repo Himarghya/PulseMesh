@@ -95,6 +95,14 @@ async function bootstrap() {
   });
 }
 
+process.on('uncaughtException', (err) => {
+  console.warn('⚠️ [PulseMesh API] Caught unhandled exception:', err.message);
+});
+
+process.on('unhandledRejection', (reason) => {
+  console.warn('⚠️ [PulseMesh API] Caught unhandled promise rejection:', reason?.message || reason);
+});
+
 bootstrap().catch((err) => {
   console.error('Fatal API startup error:', err);
   process.exit(1);
