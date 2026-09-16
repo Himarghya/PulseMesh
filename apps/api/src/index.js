@@ -58,8 +58,30 @@ async function bootstrap() {
   }
 
   const server = createServer();
-  server.listen(config.port, config.host, () => {
+  server.listen(config.port, config.host, async () => {
     console.log(`🚀 [PulseMesh API] Cyber-Telemetry REST API listening at http://${config.host}:${config.port}`);
+
+    // In zero-config dev mode, start embedded worker, recovery, and scheduler inside the same shared memory space
+    if (process.env.STANDALONE_API !== 'true') {
+      try {
+        const { WorkerInstance } = await import('../../worker/src/worker.js');
+        const { RecoveryService } = await import('../../recovery/src/recovery.js');
+        const { SchedulerService } = await import('../../scheduler/src/scheduler.js');
+
+        const worker = new WorkerInstance({ capacity: 5 });
+        await worker.start();
+
+        const recovery = new RecoveryService({ scanIntervalMs: 5000 });
+        await recovery.start();
+
+        const scheduler = new SchedulerService(5000);
+        await scheduler.start();
+
+        console.log('⚡ [PulseMesh Engine] Embedded Worker, Recovery Watchdog & Scheduler active.');
+      } catch (err) {
+        console.warn('⚠️ [PulseMesh Engine] Failed to start embedded background services:', err.message);
+      }
+    }
   });
 }
 

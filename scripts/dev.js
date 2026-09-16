@@ -55,16 +55,10 @@ function startProcess(name, cmd, args, cwd, color) {
   return child;
 }
 
-// 1. Start API Server (Port 3000)
-startProcess('API', 'node', ['apps/api/src/index.js'], rootDir, '\x1b[34m');
+// 1. Start API Server with Embedded Engine (Port 3000)
+startProcess('ENGINE', 'node', ['apps/api/src/index.js'], rootDir, '\x1b[36m');
 
-// 2. Start Worker (Capacity: 5)
-startProcess('WORKER', 'node', ['apps/worker/src/index.js'], rootDir, '\x1b[32m');
-
-// 3. Start Recovery Watchdog
-startProcess('RECOVERY', 'node', ['apps/recovery/src/index.js'], rootDir, '\x1b[33m');
-
-// 4. Start Vite React Dashboard (Port 5173)
+// 2. Start Vite React Dashboard (Port 5173)
 startProcess(
   'VITE',
   npmCmd,
