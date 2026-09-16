@@ -91,6 +91,7 @@ export function App() {
         activeTab={activeTab}
         onRefresh={handleRefresh}
         isRefreshing={isRefreshing}
+        onTriggerDemoJob={handleTriggerDemoJob}
       />
 
       <div className="flex flex-1">
