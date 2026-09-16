@@ -1,5 +1,25 @@
 const API_BASE = '/api/v1';
 
+const listeners = new Set();
+
+export function onApiEvent(callback) {
+  listeners.add(callback);
+  return () => listeners.delete(callback);
+}
+
+function emitApiEvent(event) {
+  listeners.forEach((cb) => {
+    try {
+      cb(event);
+    } catch {
+      // ignore
+    }
+  });
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('pulsemesh:api', { detail: event }));
+  }
+}
+
 export async function fetchApi(path, options = {}) {
   const token = localStorage.getItem('pulsemesh_token');
   const apiKey = localStorage.getItem('pulsemesh_apikey');
@@ -15,17 +35,65 @@ export async function fetchApi(path, options = {}) {
     headers['Authorization'] = `Bearer ${token}`;
   }
 
-  const response = await fetch(`${API_BASE}${path}`, {
-    method: options.method || 'GET',
-    headers,
-    body: options.body ? JSON.stringify(options.body) : undefined,
+  const method = options.method || 'GET';
+  const fullUrl = `${API_BASE}${path}`;
+  const startTime = performance.now();
+
+  emitApiEvent({
+    type: 'request',
+    method,
+    url: fullUrl,
+    body: options.body,
+    timestamp: new Date().toLocaleTimeString(),
   });
 
-  const data = await response.json().catch(() => ({}));
-  if (!response.ok) {
-    throw new Error(data?.error?.message || `HTTP ${response.status}`);
+  try {
+    const response = await fetch(fullUrl, {
+      method,
+      headers,
+      body: options.body ? JSON.stringify(options.body) : undefined,
+    });
+
+    const duration = Math.round(performance.now() - startTime);
+    const data = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      const errorMsg = data?.error?.message || `HTTP ${response.status}`;
+      emitApiEvent({
+        type: 'response_error',
+        method,
+        url: fullUrl,
+        status: response.status,
+        duration,
+        error: errorMsg,
+        timestamp: new Date().toLocaleTimeString(),
+      });
+      throw new Error(errorMsg);
+    }
+
+    emitApiEvent({
+      type: 'response_success',
+      method,
+      url: fullUrl,
+      status: response.status,
+      duration,
+      data,
+      timestamp: new Date().toLocaleTimeString(),
+    });
+
+    return data;
+  } catch (err) {
+    const duration = Math.round(performance.now() - startTime);
+    emitApiEvent({
+      type: 'network_error',
+      method,
+      url: fullUrl,
+      duration,
+      error: err.message,
+      timestamp: new Date().toLocaleTimeString(),
+    });
+    throw err;
   }
-  return data;
 }
 
 export const api = {

@@ -25,8 +25,9 @@ import {
   Cpu,
   Layers,
   Loader2,
+  Globe,
 } from 'lucide-react';
-import { api } from '../../services/api.js';
+import { api, onApiEvent } from '../../services/api.js';
 
 export function ChaosConsole({ workers = [], jobs = [], onRefresh }) {
   const [chaosLog, setChaosLog] = useState([
@@ -79,6 +80,24 @@ export function ChaosConsole({ workers = [], jobs = [], onRefresh }) {
       terminalBottomRef.current.scrollIntoView({ behavior: 'smooth' });
     }
   }, [chaosLog]);
+
+  // Subscribe to real-time API fetch telemetry
+  useEffect(() => {
+    const unsubscribe = onApiEvent((event) => {
+      if (event.type === 'request') {
+        const bodyPreview = event.body ? ` [Body: ${JSON.stringify(event.body).substring(0, 45)}...]` : '';
+        addLog(`🌐 [FETCH REQUEST] ${event.method} ${event.url}${bodyPreview}`, 'info', 'network');
+      } else if (event.type === 'response_success') {
+        addLog(`✅ [FETCH SUCCESS] HTTP ${event.status} (${event.duration}ms) ${event.method} ${event.url}`, 'success', 'network');
+      } else if (event.type === 'response_error') {
+        addLog(`🛑 [FETCH FAILED] HTTP ${event.status} (${event.duration}ms) ${event.method} ${event.url} - ${event.error}`, 'error', 'network');
+      } else if (event.type === 'network_error') {
+        addLog(`⚠️ [FETCH NETWORK ERR] (${event.duration}ms) ${event.method} ${event.url} - ${event.error}`, 'warn', 'network');
+      }
+    });
+
+    return unsubscribe;
+  }, []);
 
   const addLog = (msg, type = 'info', category = 'general') => {
     setChaosLog((prev) => [
@@ -375,6 +394,7 @@ export function ChaosConsole({ workers = [], jobs = [], onRefresh }) {
     if (logFilter === 'errors') return log.type === 'error';
     if (logFilter === 'success') return log.type === 'success';
     if (logFilter === 'warn') return log.type === 'warn';
+    if (logFilter === 'network') return log.category === 'network';
     return true;
   });
 
@@ -844,7 +864,7 @@ export function ChaosConsole({ workers = [], jobs = [], onRefresh }) {
               
               <div className="flex items-center space-x-2">
                 <div className="flex items-center space-x-1 bg-slate-900 border border-slate-800 rounded p-0.5">
-                  {['all', 'errors', 'warn', 'success'].map((f) => (
+                  {['all', 'errors', 'warn', 'success', 'network'].map((f) => (
                     <button
                       key={f}
                       onClick={() => setLogFilter(f)}
@@ -875,7 +895,9 @@ export function ChaosConsole({ workers = [], jobs = [], onRefresh }) {
                 <div
                   key={log.id}
                   className={`p-2 rounded border text-[11px] leading-relaxed transition-all ${
-                    log.type === 'error'
+                    log.category === 'network'
+                      ? 'bg-blue-950/30 border-blue-800/60 text-blue-300'
+                      : log.type === 'error'
                       ? 'bg-rose-950/40 border-rose-900/60 text-rose-300'
                       : log.type === 'warn'
                       ? 'bg-amber-950/40 border-amber-900/60 text-amber-300'
@@ -886,6 +908,11 @@ export function ChaosConsole({ workers = [], jobs = [], onRefresh }) {
                 >
                   <div className="flex items-start space-x-2">
                     <span className="text-[10px] text-slate-500 shrink-0 select-none">[{log.time}]</span>
+                    {log.category === 'network' && (
+                      <span className="text-[9px] px-1 py-0.2 rounded bg-blue-500/20 text-blue-400 border border-blue-500/30 shrink-0 font-bold">
+                        HTTP
+                      </span>
+                    )}
                     <span className="break-all">{log.msg}</span>
                   </div>
                 </div>
