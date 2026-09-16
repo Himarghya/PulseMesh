@@ -244,6 +244,15 @@ function handleMemoryJobs(sql, params) {
     return { rows: [{ ...job }], rowCount: 1 };
   }
 
+  // SELECT ... FROM jobs WHERE status = 'running' AND leased_until < NOW()
+  if (lower.startsWith('select') && lower.includes('from jobs') && lower.includes('leased_until <')) {
+    const now = Date.now();
+    const expired = Array.from(table.values())
+      .filter((j) => j.status === 'running' && j.leased_until && new Date(j.leased_until).getTime() < now)
+      .map((j) => ({ ...j }));
+    return { rows: expired, rowCount: expired.length };
+  }
+
   // SELECT ... FROM jobs WHERE id = $1 (Exact match on primary key id)
   if (lower.startsWith('select') && /\bwhere\s+id\s*=/i.test(lower)) {
     const jobId = params[0];
@@ -254,7 +263,7 @@ function handleMemoryJobs(sql, params) {
   // SELECT ... FROM jobs WHERE organization_id = ...
   if (lower.startsWith('select') && lower.includes('from jobs')) {
     let rows = Array.from(table.values()).map((j) => ({ ...j }));
-    if (params.length > 0 && params[0]) {
+    if (lower.includes('organization_id =') && params.length > 0 && params[0]) {
       rows = rows.filter((j) => j.organization_id === params[0]);
     }
     return { rows, rowCount: rows.length };
