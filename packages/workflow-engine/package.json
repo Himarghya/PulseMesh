@@ -1,0 +1,10 @@
+{
+  "name": "@pulsemesh/workflow-engine",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "./src/index.js",
+  "dependencies": {
+    "@pulsemesh/shared": "*",
+    "@pulsemesh/database": "*"
+  }
+}

@@ -1,0 +1,8 @@
+FROM node:20-alpine
+WORKDIR /app
+COPY package*.json ./
+COPY packages/ ./packages/
+COPY apps/ ./apps/
+RUN npm install --omit=dev
+EXPOSE 3000
+CMD ["node", "apps/api/src/index.js"]

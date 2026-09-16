@@ -1,0 +1,148 @@
+version: '3.8'
+
+services:
+  # 1. PostgreSQL (Durable Source of Truth)
+  postgres:
+    image: postgres:16-alpine
+    container_name: pulsemesh-postgres
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgrespassword2026
+      POSTGRES_DB: pulsemesh
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./packages/database/src/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d pulsemesh"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # 2. Redis (Low-Latency Transient Queue & PubSub Bus)
+  redis:
+    image: redis:7-alpine
+    container_name: pulsemesh-redis
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # 3. PulseMesh API Server
+  api:
+    build:
+      context: .
+      dockerfile: infra/docker/Dockerfile.api
+    container_name: pulsemesh-api
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      PORT: 3000
+      HOST: 0.0.0.0
+      DATABASE_URL: postgresql://postgres:postgrespassword2026@postgres:5432/pulsemesh
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: super-secret-pulsemesh-cyber-jwt-key-2026
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  # 4. Worker Node Alpha
+  worker-alpha:
+    build:
+      context: .
+      dockerfile: infra/docker/Dockerfile.worker
+    container_name: pulsemesh-worker-alpha
+    restart: always
+    environment:
+      WORKER_CONCURRENCY: 5
+      DATABASE_URL: postgresql://postgres:postgrespassword2026@postgres:5432/pulsemesh
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  # 5. Worker Node Beta
+  worker-beta:
+    build:
+      context: .
+      dockerfile: infra/docker/Dockerfile.worker
+    container_name: pulsemesh-worker-beta
+    restart: always
+    environment:
+      WORKER_CONCURRENCY: 5
+      DATABASE_URL: postgresql://postgres:postgrespassword2026@postgres:5432/pulsemesh
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  # 6. Recovery Watchdog Service
+  recovery:
+    build:
+      context: .
+      dockerfile: infra/docker/Dockerfile.api
+    container_name: pulsemesh-recovery
+    command: ["node", "apps/recovery/src/index.js"]
+    restart: always
+    environment:
+      DATABASE_URL: postgresql://postgres:postgrespassword2026@postgres:5432/pulsemesh
+      RECOVERY_SCAN_INTERVAL_MS: 5000
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # 7. Distributed Scheduler Service
+  scheduler:
+    build:
+      context: .
+      dockerfile: infra/docker/Dockerfile.api
+    container_name: pulsemesh-scheduler
+    command: ["node", "apps/scheduler/src/index.js"]
+    restart: always
+    environment:
+      DATABASE_URL: postgresql://postgres:postgrespassword2026@postgres:5432/pulsemesh
+      SCHEDULER_POLL_INTERVAL_MS: 1000
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # 8. React Cyber-Telemetry Dashboard
+  dashboard:
+    build:
+      context: .
+      dockerfile: infra/docker/Dockerfile.dashboard
+    container_name: pulsemesh-dashboard
+    restart: always
+    ports:
+      - "5173:5173"
+    depends_on:
+      - api
+
+  # 9. Prometheus Monitoring Exporter
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: pulsemesh-prometheus
+    restart: always
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./infra/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+
+volumes:
+  pgdata:
+  redisdata:

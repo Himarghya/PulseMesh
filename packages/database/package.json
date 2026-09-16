@@ -1,0 +1,10 @@
+{
+  "name": "@pulsemesh/database",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "./src/index.js",
+  "dependencies": {
+    "@pulsemesh/shared": "*",
+    "pg": "^8.11.3"
+  }
+}

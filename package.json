@@ -1,0 +1,37 @@
+{
+  "name": "pulsemesh",
+  "version": "1.0.0",
+  "description": "PulseMesh: Production-Grade Distributed Job Processing & Workflow Orchestration Platform (Pure JavaScript Edition)",
+  "type": "module",
+  "private": true,
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "dev:api": "node apps/api/src/index.js",
+    "dev:worker": "node apps/worker/src/index.js",
+    "dev:scheduler": "node apps/scheduler/src/index.js",
+    "dev:recovery": "node apps/recovery/src/index.js",
+    "dev:dashboard": "npm run dev --workspace=@pulsemesh/dashboard",
+    "dev": "npm run dev:api",
+    "test": "node --test tests/**/*.test.js",
+    "test:invariants": "node --test tests/invariants/*.test.js",
+    "test:unit": "node --test tests/unit/*.test.js",
+    "test:integration": "node --test tests/integration/*.test.js",
+    "test:chaos": "node tests/chaos/worker-crash.test.js",
+    "benchmark": "node scripts/benchmark.js",
+    "seed": "node scripts/seed.js",
+    "demo": "node scripts/demo-run.js"
+  },
+  "keywords": [
+    "distributed-systems",
+    "job-queue",
+    "workflow-orchestration",
+    "dag",
+    "fencing-tokens",
+    "outbox-pattern"
+  ],
+  "author": "PulseMesh Engineering Team",
+  "license": "MIT"
+}

@@ -1,0 +1,61 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+body {
+  margin: 0;
+  background-color: #070A12;
+  color: #F1F5F9;
+  font-family: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+}
+
+code, pre, .font-mono {
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* Custom Cyber Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #070A12;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #1E293B;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #06B6D4;
+}
+
+/* Cyber Glassmorphism Utilities */
+.cyber-card {
+  background: rgba(13, 19, 34, 0.75);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(30, 41, 59, 0.8);
+  box-shadow: 0 4px 24px -1px rgba(0, 0, 0, 0.5);
+}
+
+.cyber-card:hover {
+  border-color: rgba(6, 182, 212, 0.3);
+}
+
+.cyber-glow {
+  box-shadow: 0 0 20px -3px rgba(6, 182, 212, 0.3);
+}
+
+.cyber-glow-emerald {
+  box-shadow: 0 0 20px -3px rgba(16, 185, 129, 0.3);
+}
+
+.cyber-glow-rose {
+  box-shadow: 0 0 20px -3px rgba(244, 63, 94, 0.3);
+}
