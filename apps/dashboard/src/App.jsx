@@ -14,6 +14,7 @@ import { connectEventStream } from './services/sse.js';
 
 export function App() {
   const [activeTab, setActiveTab] = useState('overview');
+  const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
   const [jobs, setJobs] = useState([]);
   const [workers, setWorkers] = useState([]);
   const [queues, setQueues] = useState([]);
@@ -85,19 +86,29 @@ export function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#070A12] text-slate-100 flex flex-col">
+    <div className="min-h-screen bg-[#070A12] text-slate-100 flex flex-col selection:bg-cyan-500/30 selection:text-cyan-200">
       <Header
         currentTenant={tenant}
         activeTab={activeTab}
         onRefresh={handleRefresh}
         isRefreshing={isRefreshing}
         onTriggerDemoJob={handleTriggerDemoJob}
+        isMobileNavOpen={isMobileNavOpen}
+        onToggleMobileNav={() => setIsMobileNavOpen((prev) => !prev)}
       />
 
-      <div className="flex flex-1">
-        <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
+      <div className="flex flex-1 relative">
+        <Sidebar
+          activeTab={activeTab}
+          setActiveTab={(tab) => {
+            setActiveTab(tab);
+            setIsMobileNavOpen(false);
+          }}
+          isOpen={isMobileNavOpen}
+          onClose={() => setIsMobileNavOpen(false)}
+        />
 
-        <main className="flex-1 p-6 lg:p-8 max-w-7xl overflow-x-hidden">
+        <main className="flex-1 p-3.5 sm:p-6 lg:p-8 max-w-full lg:max-w-7xl overflow-x-hidden transition-all">
           {activeTab === 'overview' && (
             <SystemOverview
               jobs={jobs}

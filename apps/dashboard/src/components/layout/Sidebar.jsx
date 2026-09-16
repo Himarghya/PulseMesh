@@ -9,9 +9,10 @@ import {
   Key,
   Database,
   Radio,
+  X,
 } from 'lucide-react';
 
-export function Sidebar({ activeTab, setActiveTab }) {
+export function Sidebar({ activeTab, setActiveTab, isOpen, onClose }) {
   const navItems = [
     { id: 'overview', label: 'System Overview', icon: LayoutDashboard, badge: 'Live' },
     { id: 'queue', label: 'Queue Explorer', icon: Layers },
@@ -23,11 +24,21 @@ export function Sidebar({ activeTab, setActiveTab }) {
     { id: 'settings', label: 'API Keys & RBAC', icon: Key },
   ];
 
-  return (
-    <aside className="w-64 border-r border-[#162238] bg-[#070B16]/95 backdrop-blur-xl flex flex-col justify-between shrink-0 min-h-[calc(100vh-4rem)] shadow-lg shadow-black/30">
-      <div className="p-4 space-y-1.5">
-        <div className="px-3 py-2 text-[11px] font-mono tracking-wider text-slate-500 uppercase">
-          Command & Control
+  const sidebarContent = (
+    <div className="flex flex-col justify-between h-full">
+      <div className="p-4 space-y-1.5 overflow-y-auto">
+        <div className="flex items-center justify-between px-3 py-2">
+          <span className="text-[11px] font-mono tracking-wider text-slate-500 uppercase">
+            Command & Control
+          </span>
+          {onClose && (
+            <button
+              onClick={onClose}
+              className="p-1 rounded-md text-slate-500 hover:text-white md:hidden hover:bg-slate-800"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
         </div>
 
         {navItems.map((item) => {
@@ -36,7 +47,10 @@ export function Sidebar({ activeTab, setActiveTab }) {
           return (
             <button
               key={item.id}
-              onClick={() => setActiveTab(item.id)}
+              onClick={() => {
+                setActiveTab(item.id);
+                if (onClose) onClose();
+              }}
               className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-xs font-medium transition-all group ${
                 isActive
                   ? 'bg-gradient-to-r from-cyan-500/15 via-cyan-500/5 to-transparent text-cyan-300 border-l-2 border-l-cyan-400 border-t border-b border-r border-[#162B44] shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]'
@@ -45,7 +59,7 @@ export function Sidebar({ activeTab, setActiveTab }) {
             >
               <div className="flex items-center space-x-3">
                 <Icon
-                  className={`w-4 h-4 transition-colors ${
+                  className={`w-4 h-4 transition-colors shrink-0 ${
                     isActive ? 'text-cyan-400 drop-shadow-[0_0_6px_rgba(0,229,255,0.4)]' : item.color || 'text-slate-500 group-hover:text-slate-300'
                   }`}
                 />
@@ -72,11 +86,37 @@ export function Sidebar({ activeTab, setActiveTab }) {
           <Radio className="w-3.5 h-3.5 text-cyan-400 animate-pulse" />
           <span className="text-slate-300 font-semibold">Fencing: Monotonic v1</span>
         </div>
-        <div className="text-[10px] text-slate-500 mt-1">
+        <div className="text-[10px] text-slate-500 mt-1 font-mono">
           PostgreSQL Truth • At-Least-Once
         </div>
       </div>
-    </aside>
+    </div>
+  );
+
+  return (
+    <>
+      {/* Desktop Persistent Sidebar */}
+      <aside className="hidden md:flex flex-col w-64 border-r border-[#162238] bg-[#070B16]/95 backdrop-blur-xl shrink-0 min-h-[calc(100vh-4rem)] shadow-lg shadow-black/30">
+        {sidebarContent}
+      </aside>
+
+      {/* Mobile Off-Canvas Drawer Backdrop */}
+      {isOpen && (
+        <div
+          onClick={onClose}
+          className="fixed inset-0 bg-black/75 backdrop-blur-sm z-40 md:hidden transition-opacity animate-fade-in"
+        />
+      )}
+
+      {/* Mobile Off-Canvas Drawer Container */}
+      <div
+        className={`fixed top-0 bottom-0 left-0 z-50 w-72 bg-[#070B16] border-r border-[#162238] shadow-2xl md:hidden transform transition-transform duration-300 ease-in-out ${
+          isOpen ? 'translate-x-0' : '-translate-x-full'
+        }`}
+      >
+        {sidebarContent}
+      </div>
+    </>
   );
 }
 
