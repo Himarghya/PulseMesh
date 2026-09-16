@@ -1,4 +1,4 @@
-import { spawn } from 'child_process';
+import { spawn, execSync } from 'child_process';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -16,6 +16,40 @@ console.log(`
 \x1b[32m✔ Mode: Development (Zero-Config Transactional Engine)\x1b[0m
 \x1b[35m🛰 Launching API Server, Worker Fleet, Recovery Watchdog & Vite UI...\x1b[0m
 `);
+
+function freePort(port) {
+  try {
+    if (isWindows) {
+      const output = execSync(`netstat -ano | findstr :${port}`, { encoding: 'utf8', stdio: ['pipe', 'pipe', 'ignore'] });
+      const lines = output.trim().split('\n');
+      const myPid = process.pid;
+      const pidsToKill = new Set();
+      for (const line of lines) {
+        if (line.includes('LISTENING') || line.includes('Listen')) {
+          const parts = line.trim().split(/\s+/);
+          const pid = parts[parts.length - 1];
+          if (pid && Number(pid) !== myPid && Number(pid) > 0) {
+            pidsToKill.add(pid);
+          }
+        }
+      }
+      for (const pid of pidsToKill) {
+        try {
+          execSync(`taskkill /F /PID ${pid}`, { stdio: 'ignore' });
+          console.log(`\x1b[33m⚡ Freed port ${port} by terminating stale process (PID ${pid})\x1b[0m`);
+        } catch {}
+      }
+    } else {
+      execSync(`lsof -ti :${port} | xargs kill -9 2>/dev/null || true`, { stdio: 'ignore' });
+    }
+  } catch {
+    // Port was already free
+  }
+}
+
+// Free ports 3000 and 5173 before launching
+freePort(3000);
+freePort(5173);
 
 const processes = [];
 

@@ -58,6 +58,16 @@ async function bootstrap() {
   }
 
   const server = createServer();
+  
+  server.on('error', (err) => {
+    if (err.code === 'EADDRINUSE') {
+      console.error(`\x1b[31m🛑 [PulseMesh API] Port ${config.port} is already in use by another process. Run 'npm run dev' to automatically clean up and restart.\x1b[0m`);
+    } else {
+      console.error('🛑 [PulseMesh API] Server error:', err.message);
+    }
+    process.exit(1);
+  });
+
   server.listen(config.port, config.host, async () => {
     console.log(`🚀 [PulseMesh API] Cyber-Telemetry REST API listening at http://${config.host}:${config.port}`);
 
