@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Poison Pill Task Handler (Chaos & Dead-Letter Queue Testing)
  * 
  * Intentionally throws a fatal exception when executed to simulate
@@ -12,5 +12,7 @@ export async function handlePoisonTask(payload = {}, context = {}) {
   // Brief delay to simulate execution attempt before crashing
   await new Promise((resolve) => setTimeout(resolve, 80));
 
-  throw new Error([POISON_PILL] :  (Job ID: ));
+  const jobId = context.jobId || 'unknown';
+  throw new Error(`[POISON_PILL] ${errorType}: ${customMessage} (Job ID: ${jobId})`);
 }
+
