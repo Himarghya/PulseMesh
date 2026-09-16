@@ -9,12 +9,12 @@
     "apps/*"
   ],
   "scripts": {
+    "dev": "node scripts/dev.js",
+    "dev:dashboard": "npm run dev --workspace=@pulsemesh/dashboard",
     "dev:api": "node apps/api/src/index.js",
     "dev:worker": "node apps/worker/src/index.js",
     "dev:scheduler": "node apps/scheduler/src/index.js",
     "dev:recovery": "node apps/recovery/src/index.js",
-    "dev:dashboard": "npm run dev --workspace=@pulsemesh/dashboard",
-    "dev": "npm run dev:api",
     "test": "node --test tests/**/*.test.js",
     "test:invariants": "node --test tests/invariants/*.test.js",
     "test:unit": "node --test tests/unit/*.test.js",
