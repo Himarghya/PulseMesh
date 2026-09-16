@@ -533,6 +533,7 @@ function handleMemoryWorkers(sql, params) {
   const lower = sql.toLowerCase();
 
   if (lower.startsWith('insert into workers') || lower.startsWith('insert or replace into workers')) {
+    const existing = table.get(params[0]);
     const worker = {
       id: params[0],
       hostname: params[1] || 'localhost',
@@ -542,14 +543,35 @@ function handleMemoryWorkers(sql, params) {
       capacity: params[5] || 5,
       last_heartbeat_at: new Date().toISOString(),
       metadata: typeof params[6] === 'string' ? JSON.parse(params[6]) : params[6] || {},
-      created_at: new Date().toISOString(),
+      created_at: existing ? existing.created_at : new Date().toISOString(),
     };
     table.set(worker.id, worker);
-    return { rows: [worker], rowCount: 1 };
+    return { rows: [{ ...worker }], rowCount: 1 };
   }
 
+  // Handle findStaleWorkers query
+  if (lower.startsWith('select') && lower.includes('from workers') && lower.includes('last_heartbeat_at <')) {
+    const timeoutSeconds = params[0] || 15;
+    const now = Date.now();
+    const staleWorkers = Array.from(table.values()).filter((w) => {
+      if (w.status === 'offline') return false;
+      const ageSeconds = (now - new Date(w.last_heartbeat_at).getTime()) / 1000;
+      return ageSeconds > timeoutSeconds;
+    }).map((w) => ({ ...w }));
+
+    return { rows: staleWorkers, rowCount: staleWorkers.length };
+  }
+
+  // Handle getWorkerById
+  if (lower.startsWith('select') && lower.includes('where id =')) {
+    const workerId = params[0];
+    const worker = table.get(workerId);
+    return { rows: worker ? [{ ...worker }] : [], rowCount: worker ? 1 : 0 };
+  }
+
+  // Handle listWorkers
   if (lower.startsWith('select') && lower.includes('from workers')) {
-    const rows = Array.from(table.values());
+    const rows = Array.from(table.values()).map((w) => ({ ...w }));
     return { rows, rowCount: rows.length };
   }
 
@@ -558,9 +580,11 @@ function handleMemoryWorkers(sql, params) {
     const worker = table.get(workerId);
     if (worker) {
       if (lower.includes("status = 'draining'")) worker.status = 'draining';
-      if (lower.includes("status = 'offline'")) worker.status = 'offline';
-      worker.last_heartbeat_at = new Date().toISOString();
-      return { rows: [worker], rowCount: 1 };
+      if (lower.includes("status = 'offline'")) {
+        worker.status = 'offline';
+        worker.active_jobs_count = 0;
+      }
+      return { rows: [{ ...worker }], rowCount: 1 };
     }
   }
 

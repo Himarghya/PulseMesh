@@ -55,12 +55,14 @@ export function WorkerRadar({ workers = [], onRefresh }) {
               </div>
 
               <span
-                className={`text-[10px] font-mono uppercase px-2 py-0.5 rounded border ${
+                className={`text-[10px] font-mono uppercase px-2.5 py-0.5 rounded-full border font-bold ${
                   worker.status === 'online'
-                    ? 'bg-emerald-950/80 text-emerald-400 border-emerald-800/50'
+                    ? 'bg-emerald-950/80 text-emerald-400 border-emerald-500/80 shadow-sm shadow-emerald-500/20'
                     : worker.status === 'busy'
-                    ? 'bg-cyan-950/80 text-cyan-400 border-cyan-800/50'
-                    : 'bg-amber-950/80 text-amber-400 border-amber-800/50'
+                    ? 'bg-cyan-950/80 text-cyan-300 border-cyan-400 shadow-sm shadow-cyan-500/30 animate-pulse'
+                    : worker.status === 'draining'
+                    ? 'bg-amber-950/80 text-amber-400 border-amber-800/50'
+                    : 'bg-rose-950/80 text-rose-400 border-rose-800/50'
                 }`}
               >
                 {worker.status}
