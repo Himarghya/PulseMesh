@@ -10,84 +10,110 @@ import {
   Database,
   Radio,
   X,
+  CheckCircle2,
 } from 'lucide-react';
 
 export function Sidebar({ activeTab, setActiveTab, isOpen, onClose }) {
-  const navItems = [
-    { id: 'overview', label: 'System Overview', icon: LayoutDashboard, badge: 'Live' },
-    { id: 'queue', label: 'Queue Explorer', icon: Layers },
-    { id: 'jobs', label: 'Job Inspector', icon: Database },
-    { id: 'workflows', label: 'DAG Workflows', icon: GitFork, pulse: true },
-    { id: 'workers', label: 'Worker Radar', icon: Cpu },
-    { id: 'schedules', label: 'Schedules', icon: Calendar },
-    { id: 'chaos', label: 'Chaos Simulator', icon: Flame, color: 'text-rose-400' },
-    { id: 'settings', label: 'API Keys & RBAC', icon: Key },
+  const navSections = [
+    {
+      title: 'MONITOR',
+      items: [
+        { id: 'overview', label: 'System Overview', icon: LayoutDashboard, badge: 'Live' },
+        { id: 'queue', label: 'Queue Explorer', icon: Layers },
+        { id: 'workers', label: 'Worker Radar', icon: Cpu },
+      ],
+    },
+    {
+      title: 'WORKFLOWS',
+      items: [
+        { id: 'jobs', label: 'Job Inspector', icon: Database },
+        { id: 'workflows', label: 'DAG Workflows', icon: GitFork },
+        { id: 'schedules', label: 'Schedules', icon: Calendar },
+      ],
+    },
+    {
+      title: 'OPERATIONS',
+      items: [
+        { id: 'chaos', label: 'Chaos Simulator', icon: Flame, badge: 'Lab' },
+        { id: 'settings', label: 'API Keys & RBAC', icon: Key },
+      ],
+    },
   ];
 
   const sidebarContent = (
-    <div className="flex flex-col justify-between h-full">
-      <div className="p-4 space-y-1.5 overflow-y-auto">
-        <div className="flex items-center justify-between px-3 py-2">
-          <span className="text-[11px] font-mono tracking-wider text-slate-500 uppercase">
-            Command & Control
-          </span>
+    <div className="flex flex-col justify-between h-full bg-[#0A0E17]">
+      {/* Top Navigation Sections */}
+      <div className="p-3 space-y-5 overflow-y-auto">
+        {/* Mobile Header in Drawer */}
+        <div className="flex items-center justify-between px-2 pt-1 md:hidden">
+          <span className="text-xs font-semibold text-[#F4F7FB] font-sans">Menu</span>
           {onClose && (
             <button
               onClick={onClose}
-              className="p-1 rounded-md text-slate-500 hover:text-white md:hidden hover:bg-slate-800"
+              className="p-1 rounded-md text-[#98A4B7] hover:text-[#F4F7FB] hover:bg-[#151C2B] transition-colors"
             >
               <X className="w-4 h-4" />
             </button>
           )}
         </div>
 
-        {navItems.map((item) => {
-          const Icon = item.icon;
-          const isActive = activeTab === item.id;
-          return (
-            <button
-              key={item.id}
-              onClick={() => {
-                setActiveTab(item.id);
-                if (onClose) onClose();
-              }}
-              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-xs font-medium transition-all group ${
-                isActive
-                  ? 'bg-gradient-to-r from-cyan-500/15 via-cyan-500/5 to-transparent text-cyan-300 border-l-2 border-l-cyan-400 border-t border-b border-r border-[#162B44] shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]'
-                  : 'text-slate-400 hover:text-slate-200 hover:bg-[#0C1426] border border-transparent'
-              }`}
-            >
-              <div className="flex items-center space-x-3">
-                <Icon
-                  className={`w-4 h-4 transition-colors shrink-0 ${
-                    isActive ? 'text-cyan-400 drop-shadow-[0_0_6px_rgba(0,229,255,0.4)]' : item.color || 'text-slate-500 group-hover:text-slate-300'
-                  }`}
-                />
-                <span className={isActive ? 'font-bold text-white' : ''}>{item.label}</span>
-              </div>
+        {navSections.map((section, idx) => (
+          <div key={idx} className="space-y-1">
+            <div className="px-2.5 py-1 text-[10px] font-mono font-semibold tracking-wider text-[#667085] uppercase">
+              {section.title}
+            </div>
 
-              {item.badge && (
-                <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-emerald-950/60 text-emerald-400 border border-emerald-800/40">
-                  {item.badge}
-                </span>
-              )}
+            <div className="space-y-0.5">
+              {section.items.map((item) => {
+                const Icon = item.icon;
+                const isActive = activeTab === item.id;
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => {
+                      setActiveTab(item.id);
+                      if (onClose) onClose();
+                    }}
+                    className={`w-full flex items-center justify-between px-2.5 py-2 rounded-md text-xs font-medium transition-colors group ${
+                      isActive
+                        ? 'bg-[#151C2B] text-[#F4F7FB] border border-[#283448]'
+                        : 'text-[#98A4B7] hover:text-[#F4F7FB] hover:bg-[#0F1420] border border-transparent'
+                    }`}
+                  >
+                    <div className="flex items-center space-x-2.5">
+                      <Icon
+                        className={`w-4 h-4 transition-colors shrink-0 ${
+                          isActive ? 'text-cyan-400' : 'text-[#667085] group-hover:text-[#98A4B7]'
+                        }`}
+                      />
+                      <span className={isActive ? 'font-semibold text-[#F4F7FB]' : ''}>{item.label}</span>
+                    </div>
 
-              {item.pulse && (
-                <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse shadow-[0_0_6px_rgba(0,229,255,0.6)]"></span>
-              )}
-            </button>
-          );
-        })}
+                    {item.badge && (
+                      <span className={`text-[10px] font-mono px-1.5 py-0.2 rounded border ${
+                        item.badge === 'Live'
+                          ? 'bg-emerald-950/40 text-emerald-400 border-emerald-800/40'
+                          : 'bg-rose-950/40 text-rose-400 border-rose-800/40'
+                      }`}>
+                        {item.badge}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        ))}
       </div>
 
-      {/* Footer Node Info */}
-      <div className="p-4 border-t border-[#162238] bg-[#050812]/70">
-        <div className="flex items-center space-x-2 text-[11px] text-slate-400 font-mono">
-          <Radio className="w-3.5 h-3.5 text-cyan-400 animate-pulse" />
-          <span className="text-slate-300 font-semibold">Fencing: Monotonic v1</span>
+      {/* Bottom Status Panel */}
+      <div className="p-3 border-t border-[#202A3A] bg-[#070A12]/80 space-y-1">
+        <div className="flex items-center space-x-2 text-[11px] text-[#98A4B7] font-sans">
+          <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
+          <span className="text-[#F4F7FB] font-medium">All systems operational</span>
         </div>
-        <div className="text-[10px] text-slate-500 mt-1 font-mono">
-          PostgreSQL Truth • At-Least-Once
+        <div className="text-[10px] text-[#667085] font-mono pl-4">
+          Fencing: Monotonic v1
         </div>
       </div>
     </div>
@@ -95,8 +121,8 @@ export function Sidebar({ activeTab, setActiveTab, isOpen, onClose }) {
 
   return (
     <>
-      {/* Desktop Persistent Sidebar */}
-      <aside className="hidden md:flex flex-col w-64 border-r border-[#162238] bg-[#070B16]/95 backdrop-blur-xl shrink-0 min-h-[calc(100vh-4rem)] shadow-lg shadow-black/30">
+      {/* Desktop Fixed/Sticky Sidebar */}
+      <aside className="hidden md:flex flex-col w-56 border-r border-[#202A3A] bg-[#0A0E17] shrink-0 min-h-[calc(100vh-3.5rem)] sticky top-14 self-start">
         {sidebarContent}
       </aside>
 
@@ -104,13 +130,13 @@ export function Sidebar({ activeTab, setActiveTab, isOpen, onClose }) {
       {isOpen && (
         <div
           onClick={onClose}
-          className="fixed inset-0 bg-black/75 backdrop-blur-sm z-40 md:hidden transition-opacity animate-fade-in"
+          className="fixed inset-0 bg-black/70 backdrop-blur-sm z-40 md:hidden transition-opacity"
         />
       )}
 
       {/* Mobile Off-Canvas Drawer Container */}
       <div
-        className={`fixed top-0 bottom-0 left-0 z-50 w-72 bg-[#070B16] border-r border-[#162238] shadow-2xl md:hidden transform transition-transform duration-300 ease-in-out ${
+        className={`fixed top-0 bottom-0 left-0 z-50 w-64 bg-[#0A0E17] border-r border-[#202A3A] shadow-2xl md:hidden transform transition-transform duration-200 ease-in-out ${
           isOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
@@ -119,4 +145,3 @@ export function Sidebar({ activeTab, setActiveTab, isOpen, onClose }) {
     </>
   );
 }
-

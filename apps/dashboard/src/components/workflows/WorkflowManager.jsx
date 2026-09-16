@@ -6,16 +6,10 @@ import {
   RefreshCw,
   Layers,
   Clock,
-  CheckCircle2,
   ChevronRight,
-  Activity,
   ShieldCheck,
   GitBranch,
-  ArrowRight,
-  Database,
   Sparkles,
-  Zap,
-  Terminal,
 } from 'lucide-react';
 import { PulseDAGCanvas } from './PulseDAGCanvas.jsx';
 import { CreateWorkflowModal } from './CreateWorkflowModal.jsx';
@@ -82,7 +76,6 @@ export function WorkflowManager({ workflows = [], onRefresh }) {
     }
   };
 
-  // Quick Preset DAG Templates
   const handleDeployTemplate = async (templateName) => {
     let definition;
     let name;
@@ -136,148 +129,131 @@ export function WorkflowManager({ workflows = [], onRefresh }) {
 
   return (
     <div className="space-y-6">
-      {/* Top Banner & Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-gradient-to-r from-slate-900 via-[#150d24] to-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl relative overflow-hidden">
-        <div className="absolute right-0 top-0 w-96 h-full bg-purple-500/5 blur-3xl pointer-events-none" />
-
-        <div className="space-y-1 z-10">
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-500/30 flex items-center justify-center text-purple-400 shadow-lg shadow-purple-950/40">
-              <GitFork className="w-6 h-6 animate-pulse" />
-            </div>
-            <div>
-              <div className="flex items-center space-x-2">
-                <h2 className="text-xl font-extrabold text-white font-mono tracking-tight">
-                  DAG Workflow Orchestration
-                </h2>
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-purple-500/10 border border-purple-500/30 text-purple-400">
-                  KAHN TOPOLOGICAL ENGINE
-                </span>
-              </div>
-              <p className="text-xs text-slate-400">
-                Topological sorting, fan-out/fan-in branching, deterministic task runs, and live energy pulse streams.
-              </p>
-            </div>
-          </div>
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-[#202A3A]">
+        <div>
+          <h1 className="text-xl sm:text-2xl font-semibold tracking-tight text-[#F4F7FB]">
+            DAG Workflow Orchestration
+          </h1>
+          <p className="text-xs sm:text-sm text-[#98A4B7] mt-0.5">
+            Topological sorting, fan-out/fan-in branching, deterministic task runs, and step visualization.
+          </p>
         </div>
 
-        <div className="flex items-center space-x-3 z-10">
+        <div className="flex items-center space-x-2.5">
           <button
             onClick={() => setIsCreateOpen(true)}
-            className="px-4 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs font-mono flex items-center space-x-1.5 shadow-lg shadow-purple-600/25 active:scale-95 transition-all"
+            className="px-3 py-1.5 rounded-md bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-semibold text-xs flex items-center space-x-1.5 transition-colors"
           >
-            <Plus className="w-4 h-4 stroke-[2.5]" />
+            <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
             <span>New DAG Workflow</span>
           </button>
 
           <button
             onClick={() => selectedWorkflow && loadWorkflowDetails(selectedWorkflow.id)}
-            className="p-2.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 hover:text-cyan-400 hover:bg-slate-800 transition-all"
+            className="p-1.5 rounded-md bg-[#0F1420] border border-[#202A3A] text-[#98A4B7] hover:text-[#F4F7FB] transition-colors"
             title="Refresh DAG Data"
           >
-            <RefreshCw className="w-4 h-4" />
+            <RefreshCw className="w-3.5 h-3.5" />
           </button>
         </div>
       </div>
 
-      {/* DAG KPI Metrics Matrix */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 font-mono">
-        <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-1">
-          <div className="flex items-center justify-between text-slate-500 text-xs">
-            <span>Workflow Blueprints</span>
-            <Layers className="w-4 h-4 text-purple-400" />
+      {/* DAG KPI Metrics */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3.5 font-mono">
+        <div className="p-4 rounded-xl bg-[#0F1420] border border-[#202A3A] space-y-1">
+          <div className="flex items-center justify-between text-[#667085] text-xs">
+            <span>Blueprints</span>
+            <Layers className="w-4 h-4 text-violet-400" />
           </div>
-          <div className="text-2xl font-extrabold text-white font-mono">
-            {workflows.length} <span className="text-xs font-normal text-slate-500">Registered</span>
+          <div className="text-2xl font-bold text-[#F4F7FB]">
+            {workflows.length} <span className="text-xs font-normal text-[#667085]">Registered</span>
           </div>
-          <div className="text-[10px] text-purple-400">Deterministic Versioning v1</div>
+          <div className="text-[10px] text-violet-400">Versioning v1 Active</div>
         </div>
 
-        <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-1">
-          <div className="flex items-center justify-between text-slate-500 text-xs">
+        <div className="p-4 rounded-xl bg-[#0F1420] border border-[#202A3A] space-y-1">
+          <div className="flex items-center justify-between text-[#667085] text-xs">
             <span>Execution Runs</span>
             <Play className="w-4 h-4 text-cyan-400" />
           </div>
-          <div className="text-2xl font-extrabold text-cyan-300 font-mono">
-            {runs.length} <span className="text-xs font-normal text-slate-500">Total</span>
+          <div className="text-2xl font-bold text-cyan-400">
+            {runs.length} <span className="text-xs font-normal text-[#667085]">Total</span>
           </div>
-          <div className="text-[10px] text-cyan-400">{succeededRuns} Succeeded Executions</div>
+          <div className="text-[10px] text-cyan-400">{succeededRuns} Succeeded</div>
         </div>
 
-        <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-1">
-          <div className="flex items-center justify-between text-slate-500 text-xs">
-            <span>Current Graph Nodes</span>
+        <div className="p-4 rounded-xl bg-[#0F1420] border border-[#202A3A] space-y-1">
+          <div className="flex items-center justify-between text-[#667085] text-xs">
+            <span>Graph Nodes</span>
             <GitBranch className="w-4 h-4 text-emerald-400" />
           </div>
-          <div className="text-2xl font-extrabold text-white font-mono">
-            {tasksCount} <span className="text-xs font-normal text-slate-500">Tasks</span>
+          <div className="text-2xl font-bold text-[#F4F7FB]">
+            {tasksCount} <span className="text-xs font-normal text-[#667085]">Tasks</span>
           </div>
-          <div className="text-[10px] text-emerald-400">Zero Circular Dependencies</div>
+          <div className="text-[10px] text-emerald-400">Zero Cycles Detected</div>
         </div>
 
-        <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-1">
-          <div className="flex items-center justify-between text-slate-500 text-xs">
-            <span>Kahn Acyclicity Guard</span>
+        <div className="p-4 rounded-xl bg-[#0F1420] border border-[#202A3A] space-y-1">
+          <div className="flex items-center justify-between text-[#667085] text-xs">
+            <span>Kahn Guard</span>
             <ShieldCheck className="w-4 h-4 text-amber-400" />
           </div>
-          <div className="text-2xl font-extrabold text-emerald-300 font-mono">100%</div>
-          <div className="text-[10px] text-emerald-400">Strict DAG Precedence Verified</div>
+          <div className="text-2xl font-bold text-emerald-400">100%</div>
+          <div className="text-[10px] text-emerald-400">DAG Precedence Verified</div>
         </div>
       </div>
 
       {/* Main Dual-Column Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Left Column: Workflow Selector & Quick Templates (4 Columns) */}
-        <div className="lg:col-span-4 space-y-5">
-          {/* Workflow Blueprints Card */}
-          <div className="cyber-card rounded-xl p-4 space-y-3 bg-slate-950 border border-slate-800">
-            <div className="text-xs font-mono uppercase text-slate-400 pb-2 border-b border-slate-800 flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <Layers className="w-3.5 h-3.5 text-purple-400" />
-                <span className="font-bold">Workflow Blueprints ({workflows.length})</span>
-              </div>
-              <span className="text-[10px] text-slate-500">Active DAGs</span>
+        {/* Left Column: Workflow Selector & Presets */}
+        <div className="lg:col-span-4 space-y-4">
+          <div className="rounded-xl p-4 space-y-2.5 bg-[#0F1420] border border-[#202A3A]">
+            <div className="text-xs font-mono uppercase text-[#667085] pb-2 border-b border-[#202A3A] flex items-center justify-between">
+              <span className="font-semibold text-[#F4F7FB] flex items-center space-x-1.5">
+                <Layers className="w-3.5 h-3.5 text-violet-400" />
+                <span>Workflows ({workflows.length})</span>
+              </span>
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               {workflows.map((wf) => (
                 <button
                   key={wf.id}
                   onClick={() => loadWorkflowDetails(wf.id)}
-                  className={`w-full p-3.5 rounded-xl text-left text-xs transition-all border font-mono flex flex-col space-y-1 ${
+                  className={`w-full p-3 rounded-lg text-left text-xs transition-colors border font-mono flex flex-col space-y-0.5 ${
                     selectedWorkflow?.id === wf.id
-                      ? 'bg-purple-950/40 border-purple-500/60 text-white shadow-lg shadow-purple-950/40 ring-1 ring-purple-500/40'
-                      : 'bg-slate-900/50 border-slate-800 text-slate-400 hover:text-slate-200 hover:bg-slate-900'
+                      ? 'bg-[#151C2B] border-[#283448] text-[#F4F7FB]'
+                      : 'bg-[#0B0F19] border-[#202A3A] text-[#98A4B7] hover:text-[#F4F7FB] hover:bg-[#121827]'
                   }`}
                 >
                   <div className="flex items-center justify-between">
-                    <span className="font-bold text-slate-200 text-xs">{wf.name}</span>
-                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-purple-500/10 text-purple-400 border border-purple-500/20 font-bold">
+                    <span className="font-semibold text-[#F4F7FB] text-xs">{wf.name}</span>
+                    <span className="text-[9px] px-1 py-0.2 rounded bg-violet-500/10 text-violet-400 border border-violet-500/20 font-bold">
                       v1
                     </span>
                   </div>
-                  <p className="text-[11px] text-slate-400 line-clamp-2 leading-relaxed">
-                    {wf.description || 'No description provided'}
+                  <p className="text-[10px] text-[#667085] line-clamp-1">
+                    {wf.description || 'No description'}
                   </p>
                 </button>
               ))}
 
               {workflows.length === 0 && (
-                <div className="py-8 text-center text-xs text-slate-500 font-mono">
-                  No workflows created yet. Click "New DAG Workflow" or deploy a template below.
+                <div className="py-6 text-center text-xs text-[#667085] font-sans">
+                  No workflows created yet.
                 </div>
               )}
             </div>
           </div>
 
-          {/* Quick DAG Architecture Presets */}
-          <div className="cyber-card rounded-xl p-4 space-y-3 bg-gradient-to-b from-[#130e1c] to-[#070b13] border border-slate-800 font-mono">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-2">
-              <div className="flex items-center space-x-2 text-white font-bold text-xs">
-                <Sparkles className="w-3.5 h-3.5 text-purple-400" />
-                <span>Quick DAG Architecture Templates</span>
-              </div>
-              <span className="text-[10px] text-slate-500">1-Click Deploy</span>
+          {/* Quick Architecture Templates */}
+          <div className="rounded-xl p-4 space-y-2.5 bg-[#0F1420] border border-[#202A3A] font-mono">
+            <div className="flex items-center justify-between border-b border-[#202A3A] pb-2">
+              <span className="text-[#F4F7FB] font-semibold text-xs flex items-center space-x-1.5">
+                <Sparkles className="w-3.5 h-3.5 text-violet-400" />
+                <span>1-Click Templates</span>
+              </span>
             </div>
 
             <div className="space-y-2">
@@ -285,34 +261,28 @@ export function WorkflowManager({ workflows = [], onRefresh }) {
                 {
                   id: 'fanout_pipeline',
                   name: 'Media Transcode Fan-Out',
-                  desc: 'Root task branches into parallel 1080p/720p renders, then joins into HLS manifest.',
-                  nodes: '4 Tasks',
+                  desc: 'Root task branches into parallel 1080p/720p renders, then joins.',
                 },
                 {
                   id: 'ecommerce_saga',
                   name: 'Order Fulfillment Saga',
-                  desc: 'Linear dependency chain with inventory reservation and billing verification.',
-                  nodes: '4 Tasks',
+                  desc: 'Linear dependency chain with inventory and payment capture.',
                 },
                 {
                   id: 'ml_inference',
                   name: 'ML Feature & Scoring DAG',
-                  desc: 'Feature store ingestion, batch vector embedding, and model prediction scoring.',
-                  nodes: '3 Tasks',
+                  desc: 'Feature store ingestion, batch embedding, and model scoring.',
                 },
               ].map((tmpl) => (
                 <div
                   key={tmpl.id}
-                  className="p-3 rounded-lg bg-slate-900/60 border border-slate-800 hover:border-purple-500/50 transition-all space-y-2"
+                  className="p-2.5 rounded-lg bg-[#0B0F19] border border-[#202A3A] hover:border-[#2D3D56] transition-colors space-y-1.5"
                 >
-                  <div className="flex items-center justify-between">
-                    <span className="text-white font-bold text-xs">{tmpl.name}</span>
-                    <span className="text-[9px] text-cyan-400">{tmpl.nodes}</span>
-                  </div>
-                  <p className="text-[10px] text-slate-400 leading-relaxed">{tmpl.desc}</p>
+                  <div className="text-[#F4F7FB] font-semibold text-xs">{tmpl.name}</div>
+                  <p className="text-[10px] text-[#667085] leading-relaxed">{tmpl.desc}</p>
                   <button
                     onClick={() => handleDeployTemplate(tmpl.id)}
-                    className="w-full py-1.5 rounded bg-purple-950/60 hover:bg-purple-900/60 border border-purple-800/40 text-purple-300 text-[10px] font-bold flex items-center justify-center space-x-1 transition-all"
+                    className="w-full py-1 rounded bg-[#151C2B] hover:bg-[#1B2436] border border-[#202A3A] text-cyan-400 text-[10px] font-semibold flex items-center justify-center space-x-1 transition-colors"
                   >
                     <Plus className="w-3 h-3" />
                     <span>Deploy Blueprint</span>
@@ -323,30 +293,30 @@ export function WorkflowManager({ workflows = [], onRefresh }) {
           </div>
         </div>
 
-        {/* Right Column: DAG Canvas, Step Runs & Execution Table (8 Columns) */}
-        <div className="lg:col-span-8 space-y-6">
+        {/* Right Column: DAG Canvas & Step Runs */}
+        <div className="lg:col-span-8 space-y-4">
           {selectedWorkflow ? (
             <>
               {/* DAG Canvas View */}
-              <div className="space-y-3">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-950 p-4 rounded-xl border border-slate-800">
+              <div className="space-y-2.5">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-[#0F1420] p-4 rounded-xl border border-[#202A3A]">
                   <div>
-                    <h3 className="text-base font-bold text-white font-mono flex items-center space-x-2">
+                    <h3 className="text-sm font-semibold text-[#F4F7FB] font-sans flex items-center space-x-2">
                       <span>{selectedWorkflow.name}</span>
-                      <span className="text-xs px-2 py-0.5 rounded bg-purple-500/10 text-purple-400 border border-purple-500/30">
+                      <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-violet-500/10 text-violet-400 border border-violet-500/30">
                         Active DAG
                       </span>
                     </h3>
-                    <p className="text-xs text-slate-400 mt-0.5">{selectedWorkflow.description}</p>
+                    <p className="text-xs text-[#98A4B7] mt-0.5">{selectedWorkflow.description}</p>
                   </div>
 
                   <button
                     onClick={handleRunWorkflow}
                     disabled={isRunningTrigger}
-                    className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-black font-extrabold text-xs font-mono flex items-center justify-center space-x-2 shadow-lg shadow-cyan-500/20 transition-all active:scale-95 disabled:opacity-50 shrink-0"
+                    className="px-3.5 py-1.5 rounded-md bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-semibold text-xs flex items-center justify-center space-x-1.5 transition-colors disabled:opacity-50 shrink-0"
                   >
-                    <Play className="w-4 h-4 fill-black" />
-                    <span>{isRunningTrigger ? 'Dispatching DAG...' : 'Trigger Workflow Run'}</span>
+                    <Play className="w-3.5 h-3.5 fill-slate-950" />
+                    <span>{isRunningTrigger ? 'Dispatching...' : 'Trigger Run'}</span>
                   </button>
                 </div>
 
@@ -356,73 +326,72 @@ export function WorkflowManager({ workflows = [], onRefresh }) {
                 />
               </div>
 
-              {/* Execution Runs History & Step Timeline */}
-              <div className="cyber-card rounded-xl p-5 space-y-4 bg-slate-950 border border-slate-800">
-                <div className="text-xs font-mono uppercase text-slate-400 pb-2 border-b border-slate-800 flex items-center justify-between">
-                  <div className="flex items-center space-x-2 text-white font-bold">
-                    <Clock className="w-4 h-4 text-cyan-400" />
-                    <span>Workflow Execution History ({runs.length})</span>
-                  </div>
-                  <span className="text-[10px] text-slate-500">Deterministic Task Runs</span>
+              {/* Execution Runs History */}
+              <div className="rounded-xl p-4 space-y-3 bg-[#0F1420] border border-[#202A3A]">
+                <div className="text-xs font-mono uppercase text-[#667085] pb-2 border-b border-[#202A3A] flex items-center justify-between">
+                  <span className="text-[#F4F7FB] font-semibold flex items-center space-x-1.5">
+                    <Clock className="w-3.5 h-3.5 text-cyan-400" />
+                    <span>Workflow Runs ({runs.length})</span>
+                  </span>
                 </div>
 
-                <div className="space-y-2">
+                <div className="space-y-1.5">
                   {runs.map((r) => (
                     <div
                       key={r.id}
                       onClick={() => handleSelectRun(r.id)}
-                      className={`p-3.5 rounded-xl border text-xs font-mono flex items-center justify-between cursor-pointer transition-all ${
+                      className={`p-3 rounded-lg border text-xs font-mono flex items-center justify-between cursor-pointer transition-colors ${
                         currentRun?.id === r.id
-                          ? 'bg-cyan-950/30 border-cyan-500/50 text-white shadow-md shadow-cyan-950/40'
-                          : 'bg-slate-900/50 border-slate-800 text-slate-400 hover:bg-slate-900 hover:text-slate-200'
+                          ? 'bg-[#151C2B] border-[#283448] text-[#F4F7FB]'
+                          : 'bg-[#0B0F19] border-[#202A3A] text-[#98A4B7] hover:bg-[#121827]'
                       }`}
                     >
-                      <div className="flex items-center space-x-3">
+                      <div className="flex items-center space-x-2.5">
                         <span
-                          className={`w-2.5 h-2.5 rounded-full ${
+                          className={`w-2 h-2 rounded-full ${
                             r.status === 'succeeded'
-                              ? 'bg-emerald-400 shadow-sm shadow-emerald-400'
+                              ? 'bg-emerald-400'
                               : r.status === 'running'
-                              ? 'bg-cyan-400 animate-pulse shadow-sm shadow-cyan-400'
+                              ? 'bg-cyan-400 animate-pulse'
                               : 'bg-rose-400'
                           }`}
                         />
                         <div>
-                          <div className="font-bold text-slate-200">Run: {r.id.substring(0, 8)}...</div>
-                          <div className="text-[10px] text-slate-500">
+                          <div className="font-semibold text-[#F4F7FB]">Run: {r.id.substring(0, 8)}...</div>
+                          <div className="text-[10px] text-[#667085]">
                             Started: {new Date(r.started_at).toLocaleTimeString()}
                           </div>
                         </div>
                       </div>
 
-                      <div className="flex items-center space-x-4">
+                      <div className="flex items-center space-x-3">
                         <span
-                          className={`text-[10px] uppercase px-2.5 py-0.5 rounded border font-bold ${
+                          className={`text-[9px] uppercase px-2 py-0.2 rounded border font-semibold ${
                             r.status === 'succeeded'
-                              ? 'bg-emerald-950/80 text-emerald-400 border-emerald-800/50'
+                              ? 'bg-emerald-950/40 text-emerald-400 border-emerald-800/50'
                               : r.status === 'running'
-                              ? 'bg-cyan-950/80 text-cyan-400 border-cyan-800/50'
-                              : 'bg-rose-950/80 text-rose-400 border-rose-800/50'
+                              ? 'bg-cyan-950/40 text-cyan-400 border-cyan-800/50'
+                              : 'bg-rose-950/40 text-rose-400 border-rose-800/50'
                           }`}
                         >
                           {r.status}
                         </span>
-                        <ChevronRight className="w-4 h-4 text-slate-600" />
+                        <ChevronRight className="w-4 h-4 text-[#667085]" />
                       </div>
                     </div>
                   ))}
 
                   {runs.length === 0 && (
-                    <div className="py-8 text-center text-xs text-slate-500 font-mono">
-                      No executions recorded yet. Click "Trigger Workflow Run" to execute the DAG engine.
+                    <div className="py-6 text-center text-xs text-[#667085] font-sans">
+                      No executions recorded yet.
                     </div>
                   )}
                 </div>
               </div>
             </>
           ) : (
-            <div className="cyber-card rounded-2xl p-16 text-center text-slate-500 font-mono text-xs border border-dashed border-slate-800">
-              Select or deploy a workflow blueprint to explore its interactive DAG graph.
+            <div className="rounded-xl p-12 text-center text-[#667085] font-sans text-xs border border-dashed border-[#202A3A]">
+              Select or deploy a workflow blueprint to explore its DAG graph.
             </div>
           )}
         </div>
@@ -438,4 +407,3 @@ export function WorkflowManager({ workflows = [], onRefresh }) {
     </div>
   );
 }
-

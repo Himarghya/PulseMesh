@@ -10,6 +10,14 @@ import {
   Zap,
   TrendingUp,
   Clock,
+  RotateCcw,
+  Plus,
+  RefreshCw,
+  Search,
+  Check,
+  CircleDot,
+  AlertCircle,
+  PauseCircle,
 } from 'lucide-react';
 
 // Helper: build smooth cubic bezier SVG path through arbitrary numeric data points
@@ -20,7 +28,7 @@ function buildSmoothSvgPath(dataPoints, width = 900, height = 180, minY = 0, max
   const coords = dataPoints.map((val, idx) => {
     const x = (idx / (dataPoints.length - 1)) * width;
     const clampedVal = Math.max(minY, Math.min(maxY, val));
-    const y = height - ((clampedVal - minY) / rangeY) * (height - 35) - 15;
+    const y = height - ((clampedVal - minY) / rangeY) * (height - 28) - 14;
     return { x, y };
   });
 
@@ -46,16 +54,26 @@ function buildSmoothSvgPath(dataPoints, width = 900, height = 180, minY = 0, max
   return d;
 }
 
-export function SystemOverview({ jobs = [], workers = [], onTriggerDemoJob, onNavigateTab }) {
+export function SystemOverview({
+  jobs = [],
+  workers = [],
+  onTriggerDemoJob,
+  onNavigateTab,
+  onOpenDispatchModal,
+  onRefresh,
+}) {
   const [secondsTick, setSecondsTick] = useState(0);
-  const [metricView, setMetricView] = useState('both'); // 'both' | 'throughput' | 'latency'
+  const [timeRange, setTimeRange] = useState('1m'); // '1m' | '5m' | '15m' | '1h'
+  const [tableSearch, setTableSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState('ALL');
+  const [lastUpdated, setLastUpdated] = useState(() => new Date().toLocaleTimeString());
   
-  // Rolling time-series buffer (20 points)
+  // Rolling time-series buffer (20 data points)
   const [telemetryHistory, setTelemetryHistory] = useState(() => {
     return Array.from({ length: 20 }, (_, i) => ({
-      throughput: Math.floor(120 + Math.sin(i * 0.5) * 45 + Math.random() * 20),
-      latency: Math.floor(40 + Math.cos(i * 0.4) * 15 + Math.random() * 8),
-      health: 99.8,
+      throughput: Math.floor(32 + Math.sin(i * 0.5) * 12 + Math.random() * 8),
+      latency: Math.floor(24 + Math.cos(i * 0.4) * 8 + Math.random() * 4),
+      health: 100.0,
     }));
   });
 
@@ -70,7 +88,7 @@ export function SystemOverview({ jobs = [], workers = [], onTriggerDemoJob, onNa
   const activeLeasedTasks = workers.reduce((acc, w) => acc + (w.active_jobs_count || 0), 0) + runningJobs.length;
   const saturationPct = Math.min(100, Math.round((activeLeasedTasks / totalCapacity) * 100));
 
-  // Dynamic Health Percentage: degrades smoothly with failures, dead letters, or offline workers
+  // Dynamic Health Percentage
   const rawHealth = totalJobs === 0
     ? 100.0
     : Math.max(0, 100 - (failed * 14.5) - (queuedJobs.length > 25 ? 4 : 0));
@@ -78,16 +96,16 @@ export function SystemOverview({ jobs = [], workers = [], onTriggerDemoJob, onNa
 
   // Dynamic Live Throughput (ops/sec)
   const instantThroughput = useMemo(() => {
-    const base = runningJobs.length * 110 + (succeeded > 0 ? 32 : 12) + (workers.length * 18);
-    const fluctuation = Math.sin(secondsTick * 0.7) * 14 + (secondsTick % 3 === 0 ? 8 : -6);
-    return Math.max(8, Math.round(base + fluctuation));
+    const base = runningJobs.length * 28 + (succeeded > 0 ? 18 : 8) + (workers.length * 4);
+    const fluctuation = Math.sin(secondsTick * 0.7) * 4 + (secondsTick % 3 === 0 ? 2 : -2);
+    return Math.max(4, Math.round(base + fluctuation));
   }, [runningJobs.length, succeeded, workers.length, secondsTick]);
 
   // Dynamic Live Latency (ms)
   const instantLatency = useMemo(() => {
-    const base = 28 + (runningJobs.length * 16) + (failed * 24);
-    const jitter = Math.cos(secondsTick * 0.6) * 6;
-    return Math.max(12, Math.round(base + jitter));
+    const base = 22 + (runningJobs.length * 6) + (failed * 12);
+    const jitter = Math.cos(secondsTick * 0.6) * 3;
+    return Math.max(10, Math.round(base + jitter));
   }, [runningJobs.length, failed, secondsTick]);
 
   const dlqRate = totalJobs > 0 ? ((failed / totalJobs) * 100).toFixed(2) : '0.00';
@@ -96,6 +114,7 @@ export function SystemOverview({ jobs = [], workers = [], onTriggerDemoJob, onNa
   useEffect(() => {
     const timer = setInterval(() => {
       setSecondsTick((s) => s + 1);
+      setLastUpdated(new Date().toLocaleTimeString());
       setTelemetryHistory((prev) => {
         const next = [...prev.slice(1)];
         next.push({
@@ -110,28 +129,35 @@ export function SystemOverview({ jobs = [], workers = [], onTriggerDemoJob, onNa
     return () => clearInterval(timer);
   }, [instantThroughput, instantLatency, healthPct]);
 
-  // Compute smooth dynamic SVG paths from rolling telemetry
+  // Compute smooth dynamic SVG paths
   const throughputPoints = telemetryHistory.map((h) => h.throughput);
   const latencyPoints = telemetryHistory.map((h) => h.latency);
   const healthPoints = telemetryHistory.map((h) => h.health);
 
-  const maxThroughput = Math.max(...throughputPoints, 150) * 1.25;
-  const maxLatency = Math.max(...latencyPoints, 80) * 1.35;
+  const maxThroughput = Math.max(...throughputPoints, 50) * 1.25;
+  const maxLatency = Math.max(...latencyPoints, 40) * 1.35;
 
-  const cyanLinePath = buildSmoothSvgPath(throughputPoints, 900, 180, 0, maxThroughput, false);
-  const cyanAreaPath = buildSmoothSvgPath(throughputPoints, 900, 180, 0, maxThroughput, true);
+  const cyanLinePath = buildSmoothSvgPath(throughputPoints, 900, 160, 0, maxThroughput, false);
+  const cyanAreaPath = buildSmoothSvgPath(throughputPoints, 900, 160, 0, maxThroughput, true);
 
-  const purpleLinePath = buildSmoothSvgPath(latencyPoints, 900, 180, 0, maxLatency, false);
-  const purpleAreaPath = buildSmoothSvgPath(latencyPoints, 900, 180, 0, maxLatency, true);
+  const purpleLinePath = buildSmoothSvgPath(latencyPoints, 900, 160, 0, maxLatency, false);
+  const purpleAreaPath = buildSmoothSvgPath(latencyPoints, 900, 160, 0, maxLatency, true);
 
-  // Sparkline for Health Card
-  const healthSparkline = buildSmoothSvgPath(healthPoints.slice(-8), 80, 36, 50, 100, false);
-  // Sparkline for Throughput Card
-  const throughputSparkline = buildSmoothSvgPath(throughputPoints.slice(-8), 80, 36, 0, maxThroughput, false);
+  // Sparklines
+  const healthSparkline = buildSmoothSvgPath(healthPoints.slice(-8), 70, 26, 80, 100, false);
+  const throughputSparkline = buildSmoothSvgPath(throughputPoints.slice(-8), 70, 26, 0, maxThroughput, false);
 
-  // Format job execution timers (e.g. 00:00:23)
-  const formatTimer = (job, index) => {
-    if (!job.created_at) return '00:00:05';
+  // Filtered jobs for Recent Jobs table
+  const filteredJobs = jobs.filter((j) => {
+    const matchesSearch =
+      j.id.toLowerCase().includes(tableSearch.toLowerCase()) ||
+      j.type.toLowerCase().includes(tableSearch.toLowerCase());
+    const matchesStatus = statusFilter === 'ALL' || j.status === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
+
+  const formatTimer = (job) => {
+    if (!job.created_at) return '00:00:12';
     const elapsed = Math.floor((Date.now() - new Date(job.created_at).getTime()) / 1000);
     const secs = Math.max(0, elapsed % 60);
     const mins = Math.floor(elapsed / 60) % 60;
@@ -141,70 +167,124 @@ export function SystemOverview({ jobs = [], workers = [], onTriggerDemoJob, onNa
 
   return (
     <div className="space-y-6">
-      {/* 4 KPI Metric Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* 1. Page Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-[#202A3A]">
+        <div>
+          <h1 className="text-xl sm:text-2xl font-semibold tracking-tight text-[#F4F7FB]">
+            System Overview
+          </h1>
+          <p className="text-xs sm:text-sm text-[#98A4B7] mt-0.5">
+            Monitor distributed task execution, workers, queues and system health in real time.
+          </p>
+        </div>
+
+        <div className="flex items-center space-x-2.5 self-start sm:self-auto shrink-0">
+          <div className="text-right hidden sm:block">
+            <span className="text-[10px] uppercase font-mono text-[#667085] block">Last updated</span>
+            <span className="text-xs font-mono text-[#F4F7FB]">{lastUpdated}</span>
+          </div>
+
+          <div className="flex items-center space-x-1.5 px-2.5 py-1 rounded-md bg-[#0F1420] border border-[#202A3A] text-xs font-mono text-[#98A4B7]">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+            <span>Live</span>
+          </div>
+
+          {onRefresh && (
+            <button
+              onClick={onRefresh}
+              className="p-1.5 rounded-md bg-[#0F1420] hover:bg-[#151C2B] border border-[#202A3A] text-[#98A4B7] hover:text-[#F4F7FB] transition-colors"
+              title="Refresh"
+            >
+              <RefreshCw className="w-3.5 h-3.5" />
+            </button>
+          )}
+
+          {onOpenDispatchModal && (
+            <button
+              onClick={onOpenDispatchModal}
+              className="px-3 py-1.5 rounded-md bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-medium text-xs flex items-center space-x-1.5 transition-colors"
+            >
+              <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
+              <span>Dispatch Task</span>
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* 2. Four Refined Observability Metric Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
         {/* Card 1: System Health */}
-        <div className="rounded-xl p-5 bg-[#0D1322]/90 border border-slate-800/80 relative overflow-hidden shadow-lg group hover:border-slate-700 transition-all">
-          <div className={`absolute top-0 left-0 right-0 h-[2px] ${Number(healthPct) > 85 ? 'bg-emerald-400' : 'bg-rose-500'}`}></div>
-          <div className="flex items-start justify-between">
-            <div className="space-y-1">
-              <p className="text-[11px] font-mono uppercase tracking-wider text-slate-400 font-semibold">
-                SYSTEM HEALTH
-              </p>
-              <div className="flex items-baseline space-x-2">
-                <h3 className="text-2xl font-black font-mono text-white tracking-tight">{healthPct}%</h3>
-                <span className={`font-mono text-xs flex items-center font-bold ${Number(healthPct) >= 90 ? 'text-emerald-400' : 'text-rose-400'}`}>
-                  {Number(healthPct) >= 90 ? <ArrowUp className="w-3.5 h-3.5 stroke-[2.5]" /> : <ArrowDown className="w-3.5 h-3.5 stroke-[2.5]" />}
-                </span>
+        <div className="p-4 rounded-xl bg-[#0F1420] border border-[#202A3A] flex flex-col justify-between space-y-3">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-mono font-medium uppercase tracking-wider text-[#667085]">
+              SYSTEM HEALTH
+            </span>
+            <span className={`text-[10px] font-mono font-semibold px-1.5 py-0.2 rounded border ${
+              Number(healthPct) >= 90
+                ? 'bg-emerald-950/40 text-emerald-400 border-emerald-800/40'
+                : 'bg-rose-950/40 text-rose-400 border-rose-800/40'
+            }`}>
+              {Number(healthPct) >= 90 ? 'HEALTHY' : 'DEGRADED'}
+            </span>
+          </div>
+
+          <div className="flex items-end justify-between">
+            <div>
+              <div className="text-2xl sm:text-3xl font-bold font-mono text-[#F4F7FB] tracking-tight">
+                {healthPct}%
               </div>
-              <p className="text-[11px] font-mono text-slate-400 pt-1">
-                <span className={Number(healthPct) >= 90 ? 'text-emerald-400' : 'text-rose-400'}>
-                  {succeeded} of {totalJobs} jobs healthy
-                </span>
+              <p className="text-[11px] text-[#98A4B7] mt-1 font-mono">
+                {succeeded} / {totalJobs} jobs healthy
               </p>
             </div>
 
-            {/* Dynamic Upward Sparkline */}
-            <div className="w-20 h-10 flex items-center justify-end">
-              <svg viewBox="0 0 80 36" className="w-full h-full">
+            {/* Sparkline */}
+            <div className="w-16 h-8 flex items-center justify-end">
+              <svg viewBox="0 0 70 26" className="w-full h-full overflow-visible">
                 <path
-                  d={healthSparkline || "M 0 28 Q 20 20, 40 16 T 80 8"}
+                  d={healthSparkline || "M 0 20 Q 35 15, 70 6"}
                   fill="none"
-                  stroke={Number(healthPct) >= 90 ? '#10B981' : '#F43F5E'}
-                  strokeWidth="2.5"
+                  stroke={Number(healthPct) >= 90 ? '#10B981' : '#EF4444'}
+                  strokeWidth="2"
                   strokeLinecap="round"
                 />
-                <circle cx="78" cy="8" r="3" fill={Number(healthPct) >= 90 ? '#10B981' : '#F43F5E'} className="animate-pulse" />
               </svg>
             </div>
           </div>
         </div>
 
         {/* Card 2: Throughput */}
-        <div className="rounded-xl p-5 bg-[#0D1322]/90 border border-slate-800/80 relative overflow-hidden shadow-lg group hover:border-slate-700 transition-all">
-          <div className="absolute top-0 left-0 right-0 h-[2px] bg-cyan-400"></div>
-          <div className="flex items-start justify-between">
-            <div className="space-y-1">
-              <p className="text-[11px] font-mono uppercase tracking-wider text-slate-400 font-semibold">
-                THROUGHPUT
-              </p>
+        <div className="p-4 rounded-xl bg-[#0F1420] border border-[#202A3A] flex flex-col justify-between space-y-3">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-mono font-medium uppercase tracking-wider text-[#667085]">
+              THROUGHPUT
+            </span>
+            <span className="text-[10px] font-mono text-cyan-400 bg-cyan-950/40 border border-cyan-800/40 px-1.5 py-0.2 rounded">
+              REAL-TIME
+            </span>
+          </div>
+
+          <div className="flex items-end justify-between">
+            <div>
               <div className="flex items-baseline space-x-1.5">
-                <h3 className="text-2xl font-black font-mono text-cyan-300 tracking-tight">{instantThroughput.toLocaleString()}</h3>
-                <span className="text-xs font-mono text-slate-400">ops/s</span>
+                <span className="text-2xl sm:text-3xl font-bold font-mono text-cyan-400 tracking-tight">
+                  {instantThroughput}
+                </span>
+                <span className="text-xs font-mono text-[#667085]">ops/s</span>
               </div>
-              <p className="text-[11px] font-mono text-cyan-400/80 pt-1">
+              <p className="text-[11px] text-[#98A4B7] mt-1 font-mono">
                 {runningJobs.length} active • {succeeded} completed
               </p>
             </div>
 
-            {/* Dynamic Cyan Wave Sparkline */}
-            <div className="w-20 h-10 flex items-center justify-end">
-              <svg viewBox="0 0 80 36" className="w-full h-full">
+            {/* Sparkline */}
+            <div className="w-16 h-8 flex items-center justify-end">
+              <svg viewBox="0 0 70 26" className="w-full h-full overflow-visible">
                 <path
-                  d={throughputSparkline || "M 0 28 C 20 38, 30 8, 50 18 C 65 26, 70 12, 80 14"}
+                  d={throughputSparkline || "M 0 22 C 20 28, 40 4, 70 12"}
                   fill="none"
-                  stroke="#00F0FF"
-                  strokeWidth="2.5"
+                  stroke="#00E5FF"
+                  strokeWidth="2"
                   strokeLinecap="round"
                 />
               </svg>
@@ -213,40 +293,42 @@ export function SystemOverview({ jobs = [], workers = [], onTriggerDemoJob, onNa
         </div>
 
         {/* Card 3: Worker Saturation */}
-        <div className="rounded-xl p-5 bg-[#0D1322]/90 border border-slate-800/80 relative overflow-hidden shadow-lg group hover:border-slate-700 transition-all">
-          <div className="absolute top-0 left-0 right-0 h-[2px] bg-purple-500"></div>
-          <div className="flex items-start justify-between">
-            <div className="space-y-1">
-              <p className="text-[11px] font-mono uppercase tracking-wider text-slate-400 font-semibold">
-                WORKER SATURATION
-              </p>
-              <div className="flex items-baseline space-x-1.5">
-                <h3 className="text-2xl font-black font-mono text-white tracking-tight">{saturationPct}%</h3>
+        <div className="p-4 rounded-xl bg-[#0F1420] border border-[#202A3A] flex flex-col justify-between space-y-3">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-mono font-medium uppercase tracking-wider text-[#667085]">
+              WORKER SATURATION
+            </span>
+            <span className="text-[10px] font-mono text-violet-400 bg-violet-950/40 border border-violet-800/40 px-1.5 py-0.2 rounded">
+              FLEET
+            </span>
+          </div>
+
+          <div className="flex items-end justify-between">
+            <div>
+              <div className="text-2xl sm:text-3xl font-bold font-mono text-[#F4F7FB] tracking-tight">
+                {saturationPct}%
               </div>
-              <p className="text-[11px] font-mono text-purple-400/90 pt-1">
+              <p className="text-[11px] text-[#98A4B7] mt-1 font-mono">
                 {activeLeasedTasks} / {totalCapacity} slots active
               </p>
             </div>
 
-            {/* Purple Glowing Radial Capacity Arc */}
-            <div className="w-14 h-12 flex items-center justify-center">
+            {/* Subtle Circular Radial Gauge */}
+            <div className="w-12 h-10 flex items-center justify-center">
               <svg viewBox="0 0 60 45" className="w-full h-full">
-                {/* Background Arc */}
                 <path
                   d="M 10 38 A 20 20 0 0 1 50 38"
                   fill="none"
-                  stroke="#1E293B"
-                  strokeWidth="6"
+                  stroke="#202A3A"
+                  strokeWidth="5"
                   strokeLinecap="round"
                 />
-                {/* Active Purple Arc */}
                 <path
                   d={`M 10 38 A 20 20 0 0 1 ${Math.max(12, Math.min(50, 10 + 40 * (saturationPct / 100)))} ${Math.max(18, 38 - 20 * Math.sin((saturationPct / 100) * Math.PI))}`}
                   fill="none"
-                  stroke="#A855F7"
-                  strokeWidth="6"
+                  stroke="#8B5CF6"
+                  strokeWidth="5"
                   strokeLinecap="round"
-                  filter="drop-shadow(0 0 6px rgba(168,85,247,0.6))"
                 />
               </svg>
             </div>
@@ -254,199 +336,309 @@ export function SystemOverview({ jobs = [], workers = [], onTriggerDemoJob, onNa
         </div>
 
         {/* Card 4: Fencing / DLQ */}
-        <div className="rounded-xl p-5 bg-[#0D1322]/90 border border-slate-800/80 relative overflow-hidden shadow-lg group hover:border-slate-700 transition-all">
-          <div className={`absolute top-0 left-0 right-0 h-[2px] ${failed > 0 ? 'bg-rose-500' : 'bg-slate-700'}`}></div>
-          <div className="flex items-start justify-between">
-            <div className="space-y-1">
-              <p className="text-[11px] font-mono uppercase tracking-wider text-slate-400 font-semibold">
-                FENCING / DLQ
-              </p>
-              <div className="flex items-baseline space-x-1.5">
-                <h3 className="text-2xl font-black font-mono text-white tracking-tight">{dlqRate}%</h3>
+        <div className="p-4 rounded-xl bg-[#0F1420] border border-[#202A3A] flex flex-col justify-between space-y-3">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-mono font-medium uppercase tracking-wider text-[#667085]">
+              PENDING / DLQ
+            </span>
+            <span className={`text-[10px] font-mono px-1.5 py-0.2 rounded border ${
+              failed > 0
+                ? 'bg-rose-950/40 text-rose-400 border-rose-800/40'
+                : 'bg-[#151C2B] text-[#98A4B7] border-[#202A3A]'
+            }`}>
+              {failed > 0 ? 'ALERT' : 'NOMINAL'}
+            </span>
+          </div>
+
+          <div className="flex items-end justify-between">
+            <div>
+              <div className="text-2xl sm:text-3xl font-bold font-mono text-[#F4F7FB] tracking-tight">
+                {dlqRate}%
               </div>
-              <p className={`text-[11px] font-mono font-bold pt-1 ${failed > 0 ? 'text-rose-400' : 'text-slate-400'}`}>
-                {failed === 0 ? 'Zero dropped tasks' : `${failed} in dead-letter`}
+              <p className="text-[11px] text-[#98A4B7] mt-1 font-mono">
+                {failed === 0 ? '0 dropped tasks' : `${failed} in dead-letter`}
               </p>
             </div>
 
-            <div className={`w-8 h-8 rounded-lg border flex items-center justify-center shadow-sm ${
+            <div className={`p-2 rounded-lg border ${
               failed > 0
-                ? 'bg-rose-500/10 border-rose-500/30 text-rose-400 shadow-rose-500/20'
-                : 'bg-slate-800/40 border-slate-700 text-slate-500'
+                ? 'bg-rose-500/10 border-rose-500/30 text-rose-400'
+                : 'bg-[#151C2B] border-[#202A3A] text-[#667085]'
             }`}>
-              <AlertTriangle className="w-4 h-4" />
+              {failed > 0 ? <AlertTriangle className="w-4 h-4" /> : <CheckCircle2 className="w-4 h-4 text-emerald-400" />}
             </div>
           </div>
         </div>
       </div>
 
-      {/* Real-time Throughput and Latency Telemetry Graph */}
-      <div className="rounded-2xl p-4 sm:p-6 bg-[#0D1322]/90 border border-slate-800/90 shadow-2xl relative overflow-hidden space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-800/60 pb-3 gap-2">
-          <div className="flex items-center space-x-2">
-            <Activity className="w-4 h-4 text-cyan-400 animate-pulse" />
-            <h3 className="text-xs font-mono font-bold text-slate-200 tracking-wider">
-              Real-time Throughput and Latency Telemetry
-            </h3>
+      {/* 3. Professional Observability Telemetry Chart */}
+      <div className="rounded-xl bg-[#0F1420] border border-[#202A3A] p-4 sm:p-5 space-y-4">
+        {/* Chart Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#202A3A]">
+          <div className="flex items-center space-x-2.5">
+            <Activity className="w-4 h-4 text-cyan-400" />
+            <h2 className="text-xs sm:text-sm font-semibold text-[#F4F7FB] font-sans">
+              Real-time Throughput & Latency Telemetry
+            </h2>
           </div>
 
-          <div className="flex items-center space-x-3 text-xs font-mono">
-            <div className="flex items-center space-x-1.5">
-              <span className="w-3 h-1 rounded-full bg-cyan-400 shadow-[0_0_6px_rgba(0,240,255,0.6)]"></span>
-              <span className="text-cyan-300 font-bold">{instantThroughput} ops/s</span>
+          <div className="flex items-center space-x-4 flex-wrap gap-y-2">
+            {/* Legend */}
+            <div className="flex items-center space-x-3 text-xs font-mono">
+              <div className="flex items-center space-x-1.5">
+                <span className="w-2.5 h-1 rounded-full bg-cyan-400"></span>
+                <span className="text-[#F4F7FB] font-medium">{instantThroughput} ops/s</span>
+              </div>
+              <div className="flex items-center space-x-1.5">
+                <span className="w-2.5 h-1 rounded-full bg-violet-400"></span>
+                <span className="text-[#98A4B7]">{instantLatency} ms</span>
+              </div>
             </div>
-            <div className="flex items-center space-x-1.5">
-              <span className="w-3 h-1 rounded-full bg-purple-500 shadow-[0_0_6px_rgba(168,85,247,0.6)]"></span>
-              <span className="text-purple-300 font-bold">{instantLatency} ms</span>
+
+            {/* Time range toggle */}
+            <div className="flex items-center bg-[#0B0F19] border border-[#202A3A] rounded-md p-0.5 text-[11px] font-mono">
+              {['1m', '5m', '15m', '1h'].map((range) => (
+                <button
+                  key={range}
+                  onClick={() => setTimeRange(range)}
+                  className={`px-2 py-0.5 rounded transition-colors ${
+                    timeRange === range
+                      ? 'bg-[#151C2B] text-cyan-400 font-medium'
+                      : 'text-[#667085] hover:text-[#98A4B7]'
+                  }`}
+                >
+                  {range}
+                </button>
+              ))}
             </div>
           </div>
         </div>
 
-        {/* Multi-series Dynamic SVG Graph Canvas */}
-        <div className="w-full h-44 relative">
-          <svg viewBox="0 0 900 180" preserveAspectRatio="none" className="w-full h-full">
+        {/* SVG Waveform Canvas */}
+        <div className="w-full h-36 sm:h-44 relative">
+          <svg viewBox="0 0 900 160" preserveAspectRatio="none" className="w-full h-full overflow-hidden">
             <defs>
-              <linearGradient id="cyanGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                <stop offset="0%" stopColor="#00F0FF" stopOpacity="0.25" />
-                <stop offset="100%" stopColor="#00F0FF" stopOpacity="0.0" />
+              <linearGradient id="cyanArea" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stopColor="#00E5FF" stopOpacity="0.15" />
+                <stop offset="100%" stopColor="#00E5FF" stopOpacity="0.0" />
               </linearGradient>
-              <linearGradient id="purpleGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                <stop offset="0%" stopColor="#A855F7" stopOpacity="0.25" />
-                <stop offset="100%" stopColor="#A855F7" stopOpacity="0.0" />
+              <linearGradient id="purpleArea" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stopColor="#8B5CF6" stopOpacity="0.12" />
+                <stop offset="100%" stopColor="#8B5CF6" stopOpacity="0.0" />
               </linearGradient>
-              <filter id="cyanGlow" x="-20%" y="-20%" width="140%" height="140%">
-                <feGaussianBlur stdDeviation="3" result="blur" />
-                <feComposite in="SourceGraphic" in2="blur" operator="over" />
-              </filter>
             </defs>
 
             {/* Subtle Grid Lines */}
-            <line x1="0" y1="45" x2="900" y2="45" stroke="#1E293B" strokeWidth="0.8" strokeDasharray="4 4" />
-            <line x1="0" y1="90" x2="900" y2="90" stroke="#1E293B" strokeWidth="0.8" strokeDasharray="4 4" />
-            <line x1="0" y1="135" x2="900" y2="135" stroke="#1E293B" strokeWidth="0.8" strokeDasharray="4 4" />
+            <line x1="0" y1="40" x2="900" y2="40" stroke="#18202E" strokeWidth="1" strokeDasharray="3 3" />
+            <line x1="0" y1="80" x2="900" y2="80" stroke="#18202E" strokeWidth="1" strokeDasharray="3 3" />
+            <line x1="0" y1="120" x2="900" y2="120" stroke="#18202E" strokeWidth="1" strokeDasharray="3 3" />
 
-            {/* Dynamic Cyan Wave (Throughput) */}
+            {/* Cyan Wave (Throughput) */}
             {cyanAreaPath && (
-              <path
-                d={cyanAreaPath}
-                fill="url(#cyanGradient)"
-                className="transition-all duration-700 ease-out"
-              />
+              <path d={cyanAreaPath} fill="url(#cyanArea)" className="transition-all duration-500 ease-out" />
             )}
             {cyanLinePath && (
-              <path
-                d={cyanLinePath}
-                fill="none"
-                stroke="#00F0FF"
-                strokeWidth="2.5"
-                filter="url(#cyanGlow)"
-                className="transition-all duration-700 ease-out"
-              />
+              <path d={cyanLinePath} fill="none" stroke="#00E5FF" strokeWidth="2" className="transition-all duration-500 ease-out" />
             )}
 
-            {/* Dynamic Purple Wave (Latency) */}
+            {/* Violet Wave (Latency) */}
             {purpleAreaPath && (
-              <path
-                d={purpleAreaPath}
-                fill="url(#purpleGradient)"
-                className="transition-all duration-700 ease-out"
-              />
+              <path d={purpleAreaPath} fill="url(#purpleArea)" className="transition-all duration-500 ease-out" />
             )}
             {purpleLinePath && (
-              <path
-                d={purpleLinePath}
-                fill="none"
-                stroke="#A855F7"
-                strokeWidth="2.5"
-                className="transition-all duration-700 ease-out"
-              />
+              <path d={purpleLinePath} fill="none" stroke="#8B5CF6" strokeWidth="1.75" className="transition-all duration-500 ease-out" />
             )}
           </svg>
         </div>
       </div>
 
-      {/* High-Density Telemetry Execution Table */}
-      <div className="rounded-2xl bg-[#0D1322]/90 border border-slate-800/90 shadow-2xl overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
+      {/* 4. High-Density Recent Jobs Table / Responsive Mobile Cards */}
+      <div className="rounded-xl bg-[#0F1420] border border-[#202A3A] overflow-hidden">
+        {/* Table Filter / Controls Header */}
+        <div className="p-3.5 sm:p-4 border-b border-[#202A3A] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center space-x-2">
+            <h2 className="text-xs sm:text-sm font-semibold text-[#F4F7FB] font-sans">Recent Jobs</h2>
+            <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-[#151C2B] text-[#98A4B7] border border-[#202A3A]">
+              {filteredJobs.length}
+            </span>
+          </div>
+
+          <div className="flex items-center space-x-2 flex-wrap gap-y-2">
+            {/* Search Input */}
+            <div className="relative">
+              <Search className="w-3.5 h-3.5 text-[#667085] absolute left-2.5 top-2" />
+              <input
+                type="text"
+                placeholder="Filter jobs..."
+                value={tableSearch}
+                onChange={(e) => setTableSearch(e.target.value)}
+                className="pl-8 pr-2.5 py-1 rounded-md bg-[#0B0F19] border border-[#202A3A] text-xs font-mono text-[#F4F7FB] placeholder-[#667085] focus:outline-none focus:border-cyan-500/60 w-36 sm:w-48 transition-colors"
+              />
+            </div>
+
+            {/* Status Filter Tabs */}
+            <div className="flex items-center bg-[#0B0F19] border border-[#202A3A] rounded-md p-0.5 text-[11px] font-mono">
+              {['ALL', 'running', 'succeeded', 'failed'].map((st) => (
+                <button
+                  key={st}
+                  onClick={() => setStatusFilter(st)}
+                  className={`px-2 py-0.5 rounded uppercase transition-colors ${
+                    statusFilter === st
+                      ? 'bg-[#151C2B] text-cyan-400 font-medium'
+                      : 'text-[#667085] hover:text-[#98A4B7]'
+                  }`}
+                >
+                  {st}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Desktop View: Clean Table (hidden on mobile <640px) */}
+        <div className="hidden sm:block overflow-x-auto">
+          <table className="w-full text-left border-collapse text-xs font-mono">
             <thead>
-              <tr className="border-b border-slate-800/80 bg-slate-950/40 text-[11px] font-mono text-slate-400 uppercase tracking-wider">
-                <th className="py-3 px-5">Status ↑</th>
-                <th className="py-3 px-5">Job</th>
-                <th className="py-3 px-5">Worker Hostname</th>
-                <th className="py-3 px-5">Priority</th>
-                <th className="py-3 px-5">Attempt</th>
-                <th className="py-3 px-5">Timer ↕</th>
+              <tr className="border-b border-[#202A3A] bg-[#0B0F19]/60 text-[10px] text-[#667085] uppercase tracking-wider">
+                <th className="py-2.5 px-4 font-medium">Status</th>
+                <th className="py-2.5 px-4 font-medium">Job</th>
+                <th className="py-2.5 px-4 font-medium">Worker</th>
+                <th className="py-2.5 px-4 font-medium">Priority</th>
+                <th className="py-2.5 px-4 font-medium">Attempt</th>
+                <th className="py-2.5 px-4 font-medium text-right">Runtime</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800/60 font-mono text-xs">
-              {jobs.length > 0 ? (
-                jobs.slice(0, 7).map((job, idx) => {
-                  const isRunning = job.status === 'running';
-                  const isSuccess = job.status === 'succeeded';
-                  const isFailed = job.status === 'failed' || job.status === 'dead_letter';
+            <tbody className="divide-y divide-[#18202E]/80">
+              {filteredJobs.slice(0, 8).map((job, idx) => {
+                const isRunning = job.status === 'running';
+                const isSuccess = job.status === 'succeeded';
+                const isFailed = job.status === 'failed' || job.status === 'dead_letter';
 
-                  return (
-                    <tr
-                      key={job.id}
-                      className="hover:bg-slate-900/50 transition-colors group cursor-pointer"
-                      onClick={() => onNavigateTab && onNavigateTab('jobs')}
-                    >
-                      {/* Status Badge */}
-                      <td className="py-3 px-5">
-                        <span
-                          className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-wider uppercase border ${
-                            isRunning
-                              ? 'bg-cyan-950/80 text-cyan-300 border-cyan-400 shadow-sm shadow-cyan-500/30 animate-pulse'
-                              : isSuccess
-                              ? 'bg-emerald-950/80 text-emerald-400 border-emerald-500/80'
-                              : isFailed
-                              ? 'bg-rose-950/80 text-rose-400 border-rose-500/80'
-                              : 'bg-slate-900 text-slate-300 border-slate-700'
-                          }`}
-                        >
-                          {job.status}
-                        </span>
-                      </td>
+                return (
+                  <tr
+                    key={job.id}
+                    onClick={() => onNavigateTab && onNavigateTab('jobs')}
+                    className="hover:bg-[#151C2B]/60 transition-colors cursor-pointer group"
+                  >
+                    {/* Status Badge */}
+                    <td className="py-2.5 px-4 whitespace-nowrap">
+                      <span className={`inline-flex items-center space-x-1 text-[10px] font-semibold px-2 py-0.5 rounded border ${
+                        isRunning
+                          ? 'bg-cyan-950/40 text-cyan-300 border-cyan-800/50 animate-pulse'
+                          : isSuccess
+                          ? 'bg-emerald-950/40 text-emerald-400 border-emerald-800/50'
+                          : isFailed
+                          ? 'bg-rose-950/40 text-rose-400 border-rose-800/50'
+                          : 'bg-[#151C2B] text-[#98A4B7] border-[#202A3A]'
+                      }`}>
+                        {isSuccess && <Check className="w-3 h-3 stroke-[2.5]" />}
+                        {isRunning && <span className="w-1.5 h-1.5 rounded-full bg-cyan-400"></span>}
+                        {isFailed && <AlertCircle className="w-3 h-3" />}
+                        <span>{job.status.toUpperCase()}</span>
+                      </span>
+                    </td>
 
-                      {/* Job Snippet */}
-                      <td className="py-3 px-5 font-semibold text-slate-200 group-hover:text-cyan-400 transition-colors">
-                        Distributed job...{job.id.substring(0, 14)}
-                      </td>
+                    {/* Job Title & Truncated ID */}
+                    <td className="py-2.5 px-4">
+                      <div className="font-medium text-[#F4F7FB] group-hover:text-cyan-400 transition-colors">
+                        {job.type}
+                      </div>
+                      <div className="text-[10px] text-[#667085] truncate max-w-[140px]">
+                        {job.id.substring(0, 16)}...
+                      </div>
+                    </td>
 
-                      {/* Worker Hostname */}
-                      <td className="py-3 px-5 text-slate-300">
-                        {workers[idx % Math.max(workers.length, 1)]?.hostname || `Worker hostname0${(idx % 4) + 1}`}
-                      </td>
+                    {/* Worker */}
+                    <td className="py-2.5 px-4 text-[#98A4B7]">
+                      {workers[idx % Math.max(workers.length, 1)]?.hostname || `worker-node-0${(idx % 4) + 1}`}
+                    </td>
 
-                      {/* Priority */}
-                      <td className="py-3 px-5 text-slate-200 font-bold">
-                        {job.priority || 1}
-                      </td>
+                    {/* Priority */}
+                    <td className="py-2.5 px-4">
+                      <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-[#151C2B] text-amber-300 border border-[#202A3A]">
+                        P{job.priority || 5}
+                      </span>
+                    </td>
 
-                      {/* Attempt Generation Pill */}
-                      <td className="py-3 px-5">
-                        <span className="text-[11px] text-purple-300 bg-purple-950/40 px-2 py-0.5 rounded border border-purple-800/40">
-                          Gen #{job.execution_generation || 2}
-                        </span>
-                      </td>
+                    {/* Attempt Generation */}
+                    <td className="py-2.5 px-4 text-[#98A4B7]">
+                      Gen #{job.execution_generation || 1}
+                    </td>
 
-                      {/* Timer */}
-                      <td className="py-3 px-5 text-slate-400 font-mono">
-                        {formatTimer(job, idx)}
-                      </td>
-                    </tr>
-                  );
-                })
-              ) : (
+                    {/* Runtime */}
+                    <td className="py-2.5 px-4 text-right text-[#667085]">
+                      {formatTimer(job)}
+                    </td>
+                  </tr>
+                );
+              })}
+
+              {filteredJobs.length === 0 && (
                 <tr>
-                  <td colSpan="6" className="py-8 text-center text-xs text-slate-500 font-mono">
-                    No active distributed jobs found in telemetry stream.
+                  <td colSpan="6" className="py-10 text-center text-xs text-[#667085]">
+                    No matching jobs found in current queue state.
                   </td>
                 </tr>
               )}
             </tbody>
           </table>
+        </div>
+
+        {/* Mobile View: Responsive Card Rows (<640px) */}
+        <div className="sm:hidden divide-y divide-[#18202E] p-2 space-y-2">
+          {filteredJobs.slice(0, 6).map((job, idx) => {
+            const isRunning = job.status === 'running';
+            const isSuccess = job.status === 'succeeded';
+            const isFailed = job.status === 'failed' || job.status === 'dead_letter';
+
+            return (
+              <div
+                key={job.id}
+                onClick={() => onNavigateTab && onNavigateTab('jobs')}
+                className="p-3 rounded-lg bg-[#0B0F19] border border-[#202A3A] space-y-2 font-mono text-xs cursor-pointer active:bg-[#151C2B]"
+              >
+                <div className="flex items-center justify-between">
+                  <span className={`inline-flex items-center space-x-1 text-[10px] font-semibold px-2 py-0.5 rounded border ${
+                    isRunning
+                      ? 'bg-cyan-950/40 text-cyan-300 border-cyan-800/50'
+                      : isSuccess
+                      ? 'bg-emerald-950/40 text-emerald-400 border-emerald-800/50'
+                      : isFailed
+                      ? 'bg-rose-950/40 text-rose-400 border-rose-800/50'
+                      : 'bg-[#151C2B] text-[#98A4B7] border-[#202A3A]'
+                  }`}>
+                    <span>{job.status.toUpperCase()}</span>
+                  </span>
+
+                  <span className="text-[10px] text-[#667085]">{formatTimer(job)}</span>
+                </div>
+
+                <div className="text-sm font-medium text-[#F4F7FB]">{job.type}</div>
+                <div className="text-[10px] text-[#667085] truncate">{job.id}</div>
+
+                <div className="grid grid-cols-3 gap-2 pt-1 border-t border-[#18202E] text-[10px] text-[#98A4B7]">
+                  <div>
+                    <span className="text-[#667085] block">Worker</span>
+                    <span>{workers[idx % Math.max(workers.length, 1)]?.hostname || `node-0${(idx % 4) + 1}`}</span>
+                  </div>
+                  <div>
+                    <span className="text-[#667085] block">Priority</span>
+                    <span className="text-amber-300 font-semibold">P{job.priority || 5}</span>
+                  </div>
+                  <div>
+                    <span className="text-[#667085] block">Attempt</span>
+                    <span>Gen #{job.execution_generation || 1}</span>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+
+          {filteredJobs.length === 0 && (
+            <div className="py-8 text-center text-xs text-[#667085]">
+              No matching jobs found.
+            </div>
+          )}
         </div>
       </div>
     </div>

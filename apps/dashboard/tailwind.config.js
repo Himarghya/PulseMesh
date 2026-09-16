@@ -8,41 +8,63 @@ export default {
   theme: {
     extend: {
       colors: {
+        pm: {
+          bg: '#070A12',
+          surface: '#0F1420',
+          elevated: '#151C2B',
+          overlay: '#1B2436',
+          border: '#202A3A',
+          'border-subtle': '#18202E',
+          'border-focus': '#38BDF8',
+          text: '#F4F7FB',
+          'text-secondary': '#98A4B7',
+          'text-muted': '#667085',
+          cyan: '#00E5FF',
+          'cyan-muted': '#06B6D4',
+          indigo: '#6366F1',
+          violet: '#8B5CF6',
+          emerald: '#10B981',
+          amber: '#F59E0B',
+          rose: '#EF4444',
+        },
         cyber: {
-          bg: '#060913',
-          surface: '#0B1120',
-          card: '#0D1527',
-          sidebar: '#070B16',
-          header: '#080D1C',
-          border: '#162238',
-          'border-light': '#1E3050',
+          bg: '#070A12',
+          surface: '#0F1420',
+          card: '#121827',
+          sidebar: '#0A0E17',
+          header: '#0B101D',
+          border: '#202A3A',
+          'border-light': '#283448',
           cyan: '#00E5FF',
           'cyan-glow': '#06B6D4',
           indigo: '#6366F1',
           violet: '#8B5CF6',
           emerald: '#10B981',
           amber: '#F59E0B',
-          rose: '#F43F5E',
-          text: '#F8FAFC',
-          muted: '#94A3B8',
+          rose: '#EF4444',
+          text: '#F4F7FB',
+          muted: '#98A4B7',
         }
       },
+      fontFamily: {
+        sans: ['Inter', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+        mono: ['JetBrains Mono', 'Geist Mono', 'ui-monospace', 'monospace'],
+      },
       animation: {
-        'pulse-glow': 'pulseGlow 2.5s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-        'flow-edge': 'flowEdge 1.5s linear infinite',
+        'fade-in': 'fadeIn 0.15s ease-out',
+        'pulse-subtle': 'pulseSubtle 2.5s ease-in-out infinite',
       },
       keyframes: {
-        pulseGlow: {
-          '0%, 100%': { opacity: '1', filter: 'drop-shadow(0 0 10px rgba(0, 229, 255, 0.45))' },
-          '50%': { opacity: '0.65', filter: 'drop-shadow(0 0 3px rgba(0, 229, 255, 0.15))' },
+        fadeIn: {
+          '0%': { opacity: '0', transform: 'scale(0.98)' },
+          '100%': { opacity: '1', transform: 'scale(1)' },
         },
-        flowEdge: {
-          '0%': { strokeDashoffset: '24' },
-          '100%': { strokeDashoffset: '0' },
+        pulseSubtle: {
+          '0%, 100%': { opacity: '1' },
+          '50%': { opacity: '0.6' },
         }
       }
     },
   },
   plugins: [],
 }
-

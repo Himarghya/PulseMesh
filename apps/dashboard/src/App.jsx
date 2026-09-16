@@ -9,12 +9,16 @@ import { WorkerRadar } from './components/workers/WorkerRadar.jsx';
 import { ScheduleManager } from './components/schedules/ScheduleManager.jsx';
 import { ChaosConsole } from './components/chaos/ChaosConsole.jsx';
 import { ApiKeysAndRBAC } from './components/settings/ApiKeysAndRBAC.jsx';
+import { CommandPalette } from './components/search/CommandPalette.jsx';
+import { SubmitJobModal } from './components/jobs/SubmitJobModal.jsx';
 import { api } from './services/api.js';
 import { connectEventStream } from './services/sse.js';
 
 export function App() {
   const [activeTab, setActiveTab] = useState('overview');
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
+  const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
+  const [isDispatchModalOpen, setIsDispatchModalOpen] = useState(false);
   const [jobs, setJobs] = useState([]);
   const [workers, setWorkers] = useState([]);
   const [queues, setQueues] = useState([]);
@@ -67,7 +71,7 @@ export function App() {
   const handleRefresh = async () => {
     setIsRefreshing(true);
     await loadAllData();
-    setTimeout(() => setIsRefreshing(false), 500);
+    setTimeout(() => setIsRefreshing(false), 400);
   };
 
   const handleTriggerDemoJob = async () => {
@@ -86,13 +90,14 @@ export function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#070A12] text-slate-100 flex flex-col selection:bg-cyan-500/30 selection:text-cyan-200">
+    <div className="min-h-screen bg-[#070A12] text-[#F4F7FB] flex flex-col selection:bg-cyan-500/20 selection:text-cyan-300">
       <Header
         currentTenant={tenant}
         activeTab={activeTab}
         onRefresh={handleRefresh}
         isRefreshing={isRefreshing}
-        onTriggerDemoJob={handleTriggerDemoJob}
+        onOpenDispatchModal={() => setIsDispatchModalOpen(true)}
+        onOpenCommandPalette={() => setIsCommandPaletteOpen(true)}
         isMobileNavOpen={isMobileNavOpen}
         onToggleMobileNav={() => setIsMobileNavOpen((prev) => !prev)}
       />
@@ -108,18 +113,20 @@ export function App() {
           onClose={() => setIsMobileNavOpen(false)}
         />
 
-        <main className="flex-1 p-3.5 sm:p-6 lg:p-8 max-w-full lg:max-w-7xl overflow-x-hidden transition-all">
+        <main className="flex-1 p-3.5 sm:p-6 lg:p-7 max-w-full lg:max-w-7xl overflow-x-hidden transition-all">
           {activeTab === 'overview' && (
             <SystemOverview
               jobs={jobs}
               workers={workers}
               onTriggerDemoJob={handleTriggerDemoJob}
               onNavigateTab={setActiveTab}
+              onOpenDispatchModal={() => setIsDispatchModalOpen(true)}
+              onRefresh={handleRefresh}
             />
           )}
 
           {activeTab === 'queue' && (
-            <QueueExplorer queues={queues} onRefresh={loadAllData} />
+            <QueueExplorer queues={queues} jobs={jobs} onRefresh={loadAllData} />
           )}
 
           {activeTab === 'jobs' && (
@@ -131,7 +138,7 @@ export function App() {
           )}
 
           {activeTab === 'workers' && (
-            <WorkerRadar workers={workers} onRefresh={loadAllData} />
+            <WorkerRadar workers={workers} jobs={jobs} onRefresh={loadAllData} />
           )}
 
           {activeTab === 'schedules' && (
@@ -147,6 +154,32 @@ export function App() {
           )}
         </main>
       </div>
+
+      {/* Global Command Palette (⌘K) */}
+      <CommandPalette
+        isOpen={isCommandPaletteOpen}
+        onClose={() => setIsCommandPaletteOpen(false)}
+        onNavigateTab={(tab) => {
+          if (tab === 'open_search') {
+            setIsCommandPaletteOpen(true);
+          } else {
+            setActiveTab(tab);
+          }
+        }}
+        onTriggerDispatch={() => setIsDispatchModalOpen(true)}
+        jobs={jobs}
+        workers={workers}
+        queues={queues}
+        workflows={workflows}
+        schedules={schedules}
+      />
+
+      {/* Global Dispatch Task Modal */}
+      <SubmitJobModal
+        isOpen={isDispatchModalOpen}
+        onClose={() => setIsDispatchModalOpen(false)}
+        onJobCreated={loadAllData}
+      />
     </div>
   );
 }
