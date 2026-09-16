@@ -267,7 +267,7 @@ export function PulseDAGCanvas({ workflow, workflowRun, onTaskSelect }) {
                   }
                   fontSize="9"
                   fontFamily="JetBrains Mono"
-                  textTransform="uppercase"
+                  style={{ textTransform: 'uppercase' }}
                   fontWeight="bold"
                 >
                   {status}
