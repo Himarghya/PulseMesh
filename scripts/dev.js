@@ -5,9 +5,10 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const rootDir = path.resolve(__dirname, '..');
+const dashboardDir = path.join(rootDir, 'apps', 'dashboard');
+const viteBin = path.join(rootDir, 'node_modules', 'vite', 'bin', 'vite.js');
 
 const isWindows = process.platform === 'win32';
-const npmCmd = isWindows ? 'npm.cmd' : 'npm';
 
 console.log(`
 \x1b[36m⚡ ==========================================================\x1b[0m
@@ -60,7 +61,7 @@ function startProcess(name, cmd, args, cwd, color, autoRestart = true) {
   const child = spawn(cmd, args, {
     cwd,
     stdio: 'pipe',
-    shell: true,
+    shell: false,
     env: { ...process.env, NODE_ENV: 'development' },
   });
 
@@ -98,12 +99,12 @@ function startProcess(name, cmd, args, cwd, color, autoRestart = true) {
 // 1. Start API Server with Embedded Engine (Port 3000)
 startProcess('ENGINE', 'node', ['apps/api/src/index.js'], rootDir, '\x1b[36m');
 
-// 2. Start Vite React Dashboard (Port 5173)
+// 2. Start Vite React Dashboard directly via node binary (Port 5173)
 startProcess(
   'VITE',
-  npmCmd,
-  ['run', 'dev', '--workspace=@pulsemesh/dashboard'],
-  rootDir,
+  'node',
+  [viteBin],
+  dashboardDir,
   '\x1b[35m'
 );
 
