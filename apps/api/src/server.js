@@ -48,6 +48,23 @@ export function createServer() {
       }
     }
 
+    // Rate limiting check
+    const isAuthRoute = url.pathname.startsWith('/api/v1/auth');
+    const isBulkRoute = url.pathname.includes('/bulk');
+    const rateLimitType = isAuthRoute ? 'auth' : isBulkRoute ? 'bulk' : 'default';
+
+    if (!checkRateLimit(req, rateLimitType)) {
+      res.writeHead(429, { 'Content-Type': 'application/json', 'Retry-After': '60' });
+      return res.end(JSON.stringify({
+        error: {
+          code: 'RATE_LIMIT_EXCEEDED',
+          message: isAuthRoute
+            ? 'Too many authentication attempts. Please wait before retrying.'
+            : 'Rate limit exceeded. Please throttle requests.'
+        }
+      }));
+    }
+
     // Authenticate
     const authContext = await authenticateRequest(req, config.jwtSecret);
 
@@ -66,7 +83,7 @@ export function createServer() {
     } catch (err) {
       console.error('[API Server Error]', err);
       res.writeHead(500, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ error: { code: 'INTERNAL_SERVER_ERROR', message: err.message } }));
+      res.end(JSON.stringify({ error: { code: 'INTERNAL_SERVER_ERROR', message: 'An internal error occurred. Please try again.' } }));
     }
   });
 

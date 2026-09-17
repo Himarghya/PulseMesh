@@ -1,48 +1,57 @@
-<div align="center">
+# PulseMesh
 
-# ⚡ PulseMesh
+### Distributed Task Orchestration and Observability Engine
 
-### Production-Grade Distributed Task Orchestration & Observability Platform
-
-[![Tests](https://img.shields.io/badge/tests-15%2F15%20passing-10B981?style=for-the-badge&logo=github-actions&logoColor=white)](https://github.com/Himarghya/PulseMesh)
-[![Architecture](https://img.shields.io/badge/architecture-PostgreSQL%20%2B%20ESM-00E5FF?style=for-the-badge)](https://github.com/Himarghya/PulseMesh)
-[![Invariants](https://img.shields.io/badge/invariants-6%20Mathematically%20Guaranteed-8B5CF6?style=for-the-badge)](https://github.com/Himarghya/PulseMesh)
-[![License](https://img.shields.io/badge/license-MIT-6366F1?style=for-the-badge)](LICENSE)
-
-<p align="center">
-  <b>Fault-Tolerant Distributed Execution</b> • <b>Atomic Lease Fencing ($G+1$)</b> • <b>Kahn DAG Topological Engine</b> • <b>Transactional Outbox</b> • <b>Real-Time Observability Matrix</b>
-</p>
-
-</div>
+PulseMesh is an open distributed task orchestration engine designed for high-throughput batch processing and workflow execution. It provides atomic lease fencing, dead-letter queue isolation, dynamic DAG workflow scheduling, and real-time observability telemetry.
 
 ---
 
-## 📑 Table of Contents
+## Measured Performance & Benchmarks
 
-1. [System Architecture & Design Thesis](#-system-architecture--design-thesis)
-2. [Formal Distributed Systems Invariants](#-formal-distributed-systems-invariants)
-3. [Monorepo Project Structure](#-monorepo-project-structure)
-4. [Step-by-Step Installation & Quickstart](#-step-by-step-installation--quickstart)
-5. [Deep Dive: Platform Components & Subsystems](#-deep-dive-platform-components--subsystems)
-   - [1. Transactional REST API & SSE Stream (`apps/api`)](#1-transactional-rest-api--sse-stream-appsapi)
-   - [2. Atomic Worker Fleet & Lease Engine (`apps/worker`)](#2-atomic-worker-fleet--lease-engine-appsworker)
-   - [3. Recovery Watchdog & Abandoned Lease Reaper (`apps/recovery`)](#3-recovery-watchdog--abandoned-lease-reaper-appsrecovery)
-   - [4. Deterministic Distributed Scheduler (`apps/scheduler`)](#4-deterministic-distributed-scheduler-appsscheduler)
-   - [5. Developer Observability Dashboard (`apps/dashboard`)](#5-developer-observability-dashboard-appsdashboard)
-   - [6. Algorithmic Core & Safety Guards (`packages/shared`)](#6-algorithmic-core--safety-guards-packagesshared)
-6. [Interactive Dashboard Features & Operations](#-interactive-dashboard-features--operations)
-7. [REST API Documentation](#-rest-api-documentation)
-8. [Client SDK Usage (`@pulsemesh/sdk`)](#-client-sdk-usage-pulsemeshsdk)
-9. [Chaos Engineering & Verification Suite](#-chaos-engineering--verification-suite)
-10. [Performance Benchmarks](#-performance-benchmarks)
-11. [Configuration & Environment Variables](#-configuration--environment-variables)
-12. [License](#-license)
+- **Throughput**: Sustains up to 12,000 tasks/min on a single 4-core worker pool.
+- **Failover Recovery**: 5-second automatic zombie worker lease reclamation using heartbeat watchdogs.
+- **DAG Execution**: Validates and resolves directed acyclic dependency graphs in O(V + E) time using Kahn's algorithm.
+- **Security & Rate Limiting**: Multi-tenant RBAC, SHA-256 API key authentication, per-IP/account rate limiting with exponential backoff, and sanitized error responses.
 
 ---
 
-## 🏛 System Architecture & Design Thesis
+## Architecture
 
-Distributed computing cannot assume reliable worker processes, zero network latency, or infallible queue brokers. **PulseMesh** is designed from first principles with **mathematical correctness guarantees**:
+```
+┌──────────────────────────────────────────────────────────────────────────────────┐
+│                   PulseMesh Command Matrix (React + Vite)                        │
+│          Real-Time Observability • Command Palette • Flat UI (#070A12)           │
+└────────────────────────────────────────┬─────────────────────────────────────────┘
+                                         │ (REST APIs / SSE Stream)
+                                         ▼
+┌──────────────────────────────────────────────────────────────────────────────────┐
+│                             PulseMesh Core API                                   │
+│            • Multi-Tenant RBAC & SHA-256 API Key Vault                           │
+│            • Tiered Sliding Window & Backoff Rate Limiter                        │
+│            • Transactional Outbox Ingestion Barrier                              │
+└────────────────────────────────────────┬─────────────────────────────────────────┘
+                                         │
+                    ┌────────────────────┴────────────────────┐
+                    ▼                                         ▼
+         ┌──────────────────────┐                  ┌──────────────────────┐
+         │    PostgreSQL 16     │                  │  Recovery Watchdog   │
+         │ DURABLE SOURCE TRUTH │                  │   & Lease Reaper     │
+         │  • Jobs & Workflows  │◄────────────────►│  • 2000ms Heartbeats │
+         │  • Attempt History   │                  │  • Expired Reclaims  │
+         │  • Outbox Relays     │                  │  • Fencing Bumps     │
+         │  • Fencing Tokens    │                  └──────────────────────┘
+         └──────────┬───────────┘
+                    │ (FOR UPDATE SKIP LOCKED)
+                    ▼
+         ┌────────────────────────────────────────────────────────────────┐
+         │                    Distributed Worker Fleet                    │
+         │     Atomic Claim • Monotonic Generation • Lease Renewal        │
+         └──────────┬─────────────────────────┬──────────────────────┬────┘
+                    ▼                         ▼                      ▼
+            Worker Node Alpha         Worker Node Beta       Worker Node Gamma
+            (Capacity: 5)             (Capacity: 5)          (Capacity: 5)
+```
+
 
 ```
 ┌──────────────────────────────────────────────────────────────────────────────────┐
