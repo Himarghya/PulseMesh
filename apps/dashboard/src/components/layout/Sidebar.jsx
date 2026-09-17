@@ -130,7 +130,7 @@ export function Sidebar({ activeTab, setActiveTab, isOpen, onClose }) {
       {isOpen && (
         <div
           onClick={onClose}
-          className="fixed inset-0 bg-black/70 backdrop-blur-sm z-40 md:hidden transition-opacity"
+          className="fixed inset-0 bg-black/70  z-40 md:hidden transition-opacity"
         />
       )}
 

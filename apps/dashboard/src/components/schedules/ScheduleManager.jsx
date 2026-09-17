@@ -295,7 +295,7 @@ export function ScheduleManager({ schedules = [], onRefresh }) {
 
       {/* Create Schedule Modal */}
       {isCreateOpen && (
-        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
+        <div className="fixed inset-0 z-50 bg-black/75  flex items-center justify-center p-4 animate-fade-in">
           <div className="w-full max-w-lg bg-[#0F1420] border border-[#202A3A] rounded-xl p-5 space-y-4 font-mono shadow-2xl">
             <div className="flex items-center justify-between border-b border-[#202A3A] pb-3 font-sans">
               <h3 className="font-semibold text-sm text-[#F4F7FB] flex items-center space-x-2">
@@ -306,7 +306,7 @@ export function ScheduleManager({ schedules = [], onRefresh }) {
                 onClick={() => setIsCreateOpen(false)}
                 className="text-[#667085] hover:text-[#F4F7FB] text-sm"
               >
-                ✕
+                
               </button>
             </div>
 

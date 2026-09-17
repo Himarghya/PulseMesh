@@ -149,7 +149,7 @@ export function CommandPalette({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-start justify-center pt-20 sm:pt-28 px-4 animate-fade-in">
+    <div className="fixed inset-0 z-50 bg-black/75  flex items-start justify-center pt-20 sm:pt-28 px-4 animate-fade-in">
       <div className="w-full max-w-xl bg-[#0F1420] border border-[#202A3A] rounded-xl shadow-2xl overflow-hidden flex flex-col max-h-[70vh]">
         {/* Search Input Bar */}
         <div className="flex items-center px-4 py-3.5 border-b border-[#202A3A] bg-[#0B0F19]">

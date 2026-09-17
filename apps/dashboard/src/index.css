@@ -9,14 +9,9 @@
 body {
   margin: 0;
   background-color: #070A12;
-  background-image: 
-    radial-gradient(ellipse 80% 40% at 50% -10%, rgba(14, 116, 144, 0.08), transparent 70%),
-    linear-gradient(to right, rgba(255, 255, 255, 0.012) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(255, 255, 255, 0.012) 1px, transparent 1px);
-  background-size: 100% 100%, 32px 32px, 32px 32px;
-  background-attachment: fixed;
   color: #F4F7FB;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  line-height: 1.65;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -58,9 +53,7 @@ code, pre, .font-mono {
 }
 
 .pm-card {
-  background: rgba(15, 20, 32, 0.85);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  background: #0F1420;
   border: 1px solid #202A3A;
   border-radius: 0.75rem;
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
@@ -71,9 +64,7 @@ code, pre, .font-mono {
 }
 
 .cyber-card {
-  background: rgba(15, 20, 32, 0.85);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  background: #0F1420;
   border: 1px solid #202A3A;
   border-radius: 0.75rem;
   transition: border-color 0.15s ease, box-shadow 0.15s ease;

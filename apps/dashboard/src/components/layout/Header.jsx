@@ -12,7 +12,7 @@ export function Header({
   onToggleMobileNav,
 }) {
   return (
-    <header className="h-14 border-b border-[#202A3A] bg-[#0A0E17]/90 backdrop-blur-md px-3 sm:px-6 flex items-center justify-between sticky top-0 z-30">
+    <header className="h-14 border-b border-[#202A3A] bg-[#0A0E17]/90  px-3 sm:px-6 flex items-center justify-between sticky top-0 z-30">
       {/* LEFT: Product Identity & Mobile Toggle */}
       <div className="flex items-center space-x-3 sm:space-x-4 shrink-0">
         {/* Mobile Hamburger Toggle */}
@@ -26,7 +26,7 @@ export function Header({
 
         {/* PulseMesh Brand Mark */}
         <div className="flex items-center space-x-2.5">
-          <div className="w-7 h-7 rounded-md bg-gradient-to-tr from-cyan-500 to-indigo-500 flex items-center justify-center shadow-sm shrink-0">
+          <div className="w-7 h-7 rounded-md bg-slate-900   flex items-center justify-center shadow-sm shrink-0">
             <Zap className="w-4 h-4 text-slate-950 stroke-[2.5]" />
           </div>
           <div className="flex items-center space-x-2">

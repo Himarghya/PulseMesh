@@ -54,7 +54,7 @@ export function JobDetailModal({ job, onClose, onJobUpdated }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
+    <div className="fixed inset-0 z-50 bg-black/75  flex items-center justify-center p-4 animate-fade-in">
       <div className="w-full max-w-3xl max-h-[85vh] flex flex-col bg-[#0F1420] border border-[#202A3A] rounded-xl overflow-hidden shadow-2xl">
         {/* Modal Header */}
         <div className="p-4 border-b border-[#202A3A] flex items-center justify-between bg-[#0B0F19]">

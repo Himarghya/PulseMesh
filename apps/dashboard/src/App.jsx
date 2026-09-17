@@ -33,7 +33,7 @@ export function App() {
 
     // Connect real-time Server-Sent Events stream
     const cleanup = connectEventStream((event) => {
-      console.log('⚡ [Pulse Live Event]', event);
+      console.log(' [Pulse Live Event]', event);
       loadAllData();
     });
 

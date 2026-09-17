@@ -55,7 +55,7 @@ export function CreateWorkflowModal({ isOpen, onClose, onCreated }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 bg-black/80  flex items-center justify-center p-4">
       <div className="cyber-card rounded-2xl w-full max-w-xl border-slate-700 overflow-hidden shadow-2xl">
         <div className="p-5 border-b border-slate-800 flex items-center justify-between bg-[#0A0E1A]">
           <div className="flex items-center space-x-3">
