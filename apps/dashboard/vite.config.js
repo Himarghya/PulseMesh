@@ -7,7 +7,19 @@ export default defineConfig({
     port: 5173,
     host: '0.0.0.0',
     proxy: {
-      '/api': 'http://localhost:3000',
+      '/api': {
+        target: 'http://localhost:3000',
+        changeOrigin: true,
+        configure: (proxy) => {
+          proxy.on('error', (err, _req, _res) => {
+            // Silently absorb proxy disconnects / client resets on SSE
+            if (err.code === 'ECONNRESET' || err.code === 'EPIPE' || err.code === 'ECONNREFUSED') {
+              return;
+            }
+            console.warn('[Vite Proxy]', err.message);
+          });
+        },
+      },
       '/metrics': 'http://localhost:3000',
       '/healthz': 'http://localhost:3000',
     },

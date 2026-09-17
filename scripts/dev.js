@@ -52,8 +52,11 @@ freePort(3000);
 freePort(5173);
 
 const processes = [];
+let isShuttingDown = false;
 
-function startProcess(name, cmd, args, cwd, color) {
+function startProcess(name, cmd, args, cwd, color, autoRestart = true) {
+  if (isShuttingDown) return null;
+
   const child = spawn(cmd, args, {
     cwd,
     stdio: 'pipe',
@@ -80,8 +83,11 @@ function startProcess(name, cmd, args, cwd, color) {
   });
 
   child.on('close', (code) => {
-    if (code !== 0 && code !== null) {
-      console.log(`${color}[${name}]\x1b[0m Exited with code ${code}`);
+    if (!isShuttingDown && autoRestart) {
+      console.log(`${color}[${name}]\x1b[0m Process exited with code ${code}. Respawning in 1s...`);
+      setTimeout(() => {
+        startProcess(name, cmd, args, cwd, color, autoRestart);
+      }, 1000);
     }
   });
 
@@ -109,6 +115,7 @@ console.log(`
 `);
 
 function cleanExit() {
+  isShuttingDown = true;
   console.log('\n\x1b[33m[PulseMesh] Gracefully stopping all child processes...\x1b[0m');
   for (const proc of processes) {
     try {
